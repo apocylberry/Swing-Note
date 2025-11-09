@@ -168,30 +168,7 @@ public class MainApp extends JFrame {
         });
         
         // Set application icon
-        try {
-            InputStream is = getClass().getResourceAsStream("/icon.svg");
-            if (is != null) {
-                // Create a temporary PNG icon
-                BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2d = img.createGraphics();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                // Draw a background square with rounded corners
-                g2d.setColor(new Color(103, 58, 183)); // Material Design Purple
-                g2d.fillRoundRect(2, 2, 28, 28, 6, 6);
-                
-                // Draw a text note symbol
-                g2d.setColor(new Color(237, 231, 246)); // Light purple
-                g2d.setFont(new Font("SansSerif", Font.BOLD, 20));
-                g2d.drawString("♪", 10, 23);
-                
-                g2d.dispose();
-                setIconImage(img);
-            }
-        } catch (Exception e) {
-            // Fallback to default icon
-            e.printStackTrace();
-        }
+        setIconImage(createApplicationIcon());
         
         // Add F5 key binding for date/time stamp
         editor.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "insertDateTime");
@@ -494,6 +471,24 @@ public class MainApp extends JFrame {
         int width1 = metrics.charWidth('i');
         int width2 = metrics.charWidth('W');
         return width1 == width2;
+    }
+    
+    private Image createApplicationIcon() {
+        BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        // Draw a background square with rounded corners
+        g2d.setColor(new Color(103, 58, 183)); // Material Design Purple
+        g2d.fillRoundRect(2, 2, 28, 28, 6, 6);
+        
+        // Draw a text note symbol
+        g2d.setColor(new Color(237, 231, 246)); // Light purple
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 20));
+        g2d.drawString("♪", 10, 23);
+        
+        g2d.dispose();
+        return img;
     }
     
     private void setLineLength() {
