@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug MainApp",
+            "request": "launch",
+            "mainClass": "org.foss.apocylberry.jsnote.MainApp",
+            "projectName": "jsnote",
+            "sourcePaths": ["src/main/java"],
+            "classPaths": [
+                "${workspaceFolder}/target/classes"
+            ]
+        }
+    ]
+}

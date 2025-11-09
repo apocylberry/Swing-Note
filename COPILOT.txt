@@ -1,0 +1,17 @@
+• LRECL feature does not work at all.  I've previously described it as the following, but you still don't get it:
+```
+LRECL feature still does not work. When a line is longer than the "LRECL" value, it should inject a line break at the LRECL location even when word wrap is off. The line number counter should treat this as word wrap, keeping us on the same "line number" even though we have a new line. If the second line of text is longer than the LRECL, it should also wrap, etc., until the final line of text is less than the LRECL value
+```
+
+• Despite repeated callouts to correct, searching for basic text such as `ipsum` will sometimes highlight the matched text (expected), and will sometimes highlight text following the match (unexpected)
+
+• "Show special characters" does not show the new line, tab, and space characters
+
+• Disabling line numbers should remove the line number bar on the left margin
+
+• Line numbers still do not scroll with text when word wrap is enabled
+
+• Despite multiple dives in to fix, the project icon.svg still does not show anywhere.  The application still uses the basic Java icon.
+
+• Despite repeated callouts to correct, searching past the end of the document using F3 / Shift + F3 still does not notify in the task bar!
+
