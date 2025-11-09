@@ -24,26 +24,4 @@ Do you miss the original Windows Notepad application, before Microsoft started f
 - Java 21 or higher
 - Maven 3.6 or higher
 
-## Building the Project
-
-To build the project, run:
-
-```bash
-mvn clean package
-```
-
-## Running the Application
-
-After building, you can run the application using:
-
-```bash
-java -jar target/jsnote-1.0-SNAPSHOT.jar
-```
-
-## Development
-
-This is a Maven project with the following structure:
-
-- `src/main/java` - Application source code
-- `src/test/java` - Test source code
-- `pom.xml` - Maven project configuration
+The project is still under construction in an alpha state, and is not ready for use.
