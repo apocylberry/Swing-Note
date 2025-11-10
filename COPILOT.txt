@@ -15,3 +15,4 @@ LRECL feature still does not work. When a line is longer than the "LRECL" value,
 
 • Despite repeated callouts to correct, searching past the end of the document using F3 / Shift + F3 still does not notify in the task bar!
 
+• Attempting to open a .pdf resulted in an error.  While I (the human) do not expect to be able to read the contents of non-text files as such, I expect to have their contents loaded and displayed as Notepad would do, as encoded representations of the binary data inside.
