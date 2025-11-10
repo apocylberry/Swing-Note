@@ -1,3 +1,6 @@
+# Copilot-related gunk
+.github/instructions/wmt-copilot.instructions.md
+
 # Compiled class files
 *.class
 
@@ -22,6 +25,9 @@
 # Virtual Machine crash logs
 hs_err_pid*
 replay_pid*
+
+# Distributions
+dist/
 
 # Maven
 target/
