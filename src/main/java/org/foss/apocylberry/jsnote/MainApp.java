@@ -348,15 +348,20 @@ public class MainApp extends JFrame {
         
         JFileChooser chooser = new JFileChooser();
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                String content = Files.readString(chooser.getSelectedFile().toPath());
-                editor.setText(content);
-                currentFile = chooser.getSelectedFile();
-                setTitle("Swing Note - " + currentFile.getName());
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Error reading file: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            openFile(chooser.getSelectedFile());
+        }
+    }
+    
+
+    private void openFile(File file) {
+        try {
+            String content = Files.readString(file.toPath());
+            editor.setText(content);
+            currentFile = file;
+            setTitle("Swing Note - " + currentFile.getName());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Error reading file: " + ex.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -525,7 +530,16 @@ public class MainApp extends JFrame {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            new MainApp().setVisible(true);
+            MainApp app = new MainApp();
+            app.setVisible(true);
+            
+            // If a file path was provided as command line argument, open it
+            if (args.length > 0) {
+                File fileToOpen = new File(args[0]);
+                if (fileToOpen.exists() && fileToOpen.isFile()) {
+                    app.openFile(fileToOpen);
+                }
+            }
         });
     }
 }
