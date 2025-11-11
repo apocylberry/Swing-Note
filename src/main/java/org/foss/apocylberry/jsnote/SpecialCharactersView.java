@@ -6,6 +6,7 @@ import java.awt.*;
 public class SpecialCharactersView extends PlainView {
     private boolean showSpecialCharacters;
 
+
     public SpecialCharactersView(Element elem) {
         super(elem);
     }

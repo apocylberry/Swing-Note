@@ -2,7 +2,6 @@ package org.foss.apocylberry.jsnote;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 
 public class JFontChooser extends JDialog {
     public static final int OK_OPTION = JOptionPane.OK_OPTION;

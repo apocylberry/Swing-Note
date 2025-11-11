@@ -4,19 +4,14 @@ import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public class LineNumberView extends JPanel {
     private EditorPane editor;
-    private Map<String, FontMetrics> cachedMetrics;
     private int lastHeight;
     private static final int MARGIN = 5;
     
     public LineNumberView(EditorPane editor) {
         this.editor = editor;
-        this.cachedMetrics = new HashMap<>();
         setPreferredWidth();
         setBackground(new Color(240, 240, 240));
         
@@ -54,7 +49,6 @@ public class LineNumberView extends JPanel {
                             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         
         Rectangle clip = g2d.getClipBounds();
-        int lineHeight = editor.getLineHeight();
         int startLine = getLineNumberAtPoint(clip.y);
         int endLine = getLineNumberAtPoint(clip.y + clip.height);
         

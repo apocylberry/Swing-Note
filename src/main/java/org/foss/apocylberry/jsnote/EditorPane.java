@@ -1,7 +1,6 @@
 package org.foss.apocylberry.jsnote;
 
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -44,11 +43,6 @@ public class EditorPane extends JTextPane {
             maxLineLength = 1024; // Default
         }
         
-        public void setMaxLineLength(int length) {
-            maxLineLength = length;
-            preferenceChanged(null, true, true);
-        }
-        
         public float getMinimumSpan(int axis) {
             switch (axis) {
                 case View.X_AXIS:
@@ -72,9 +66,9 @@ public class EditorPane extends JTextPane {
                     // Get the text for this view
                     String text = getDocument().getText(getStartOffset(), getEndOffset() - getStartOffset());
                     
-                    // If we're beyond LRECL, force a break
-                    int breakPos = (int) (pos / (getContainer().getFontMetrics(getFont()).charWidth('W')));
-                    if (breakPos >= maxLineLength && breakPos < text.length()) {
+                    // Always force a break at LRECL regardless of word wrap
+                    int lrecl = maxLineLength;
+                    if (lrecl > 0 && text.length() > lrecl) {
                         return BadBreakWeight;
                     }
                 } catch (BadLocationException e) {
@@ -86,26 +80,37 @@ public class EditorPane extends JTextPane {
         
         @Override
         public View breakView(int axis, int offset, float pos, float len) {
-            if (axis == View.X_AXIS && maxLineLength > 0) {
-                int breakPoint = findBreakPoint(offset, maxLineLength);
-                if (breakPoint >= 0) {
-                    return createFragment(offset, breakPoint);
-                }
-            }
-            return super.breakView(axis, offset, pos, len);
-        }
-        
-        private int findBreakPoint(int offset, int maxLength) {
+    if (axis == View.X_AXIS && maxLineLength > 0) {
+        int lrecl = maxLineLength;
+        int breakPoint = findBreakPoint(offset, lrecl);
+        if (breakPoint >= 0) {
+            // Recursively break at every LRECL chunk, not dependent on lineWrap
+            int textLength;
             try {
-                String text = getDocument().getText(offset, getEndOffset() - offset);
-                if (text.length() > maxLength) {
-                    return maxLength;
-                }
+                textLength = getDocument().getText(offset, getEndOffset() - offset).length();
             } catch (BadLocationException e) {
-                // Fall back to default behavior
+                textLength = 0;
             }
-            return -1;
+            if (textLength > lrecl) {
+                return createFragment(offset, offset + lrecl);
+            }
         }
+    }
+    return super.breakView(axis, offset, pos, len);
+}
+        
+        private int findBreakPoint(int offset, int lrecl) {
+    try {
+        String text = getDocument().getText(offset, getEndOffset() - offset);
+        if (lrecl > 0 && text.length() > lrecl) {
+            // Forcibly break at every LRECL until done
+            return lrecl;
+        }
+    } catch (BadLocationException e) {
+        // Fall back to default behavior
+    }
+    return -1;
+}
         
         public float getPreferredSpan(int axis) {
             switch (axis) {
@@ -221,15 +226,16 @@ public class EditorPane extends JTextPane {
         return wrapStyleWord;
     }
     
-    // Get current cursor position as "Line:Column"
+    // Get cursor position: both line and column 1-based, column counts chars after last newline (not including newline)
     public String getCursorPosition() {
         try {
             int caretPos = getCaretPosition();
-            Element root = styledDoc.getDefaultRootElement();
-            int line = root.getElementIndex(caretPos);
-            Element lineElement = root.getElement(line);
-            int column = caretPos - lineElement.getStartOffset();
-            return String.format("Ln %d, Col %d", line + 1, column + 1);
+            StyledDocument doc = (StyledDocument)getDocument();
+            Element root = doc.getDefaultRootElement();
+            int lineNum = root.getElementIndex(caretPos) + 1;
+            Element lineElem = root.getElement(lineNum - 1);
+            int colNum = caretPos - lineElem.getStartOffset() + 1;
+            return String.format("Ln %d, Col %d", lineNum, colNum);
         } catch (Exception e) {
             return "Ln 1, Col 1";
         }

@@ -2,7 +2,6 @@ package org.foss.apocylberry.jsnote;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 import java.util.List;

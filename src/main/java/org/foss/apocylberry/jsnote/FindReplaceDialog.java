@@ -16,7 +16,6 @@ public class FindReplaceDialog extends JDialog {
     private JButton replaceAllButton;
     private JCheckBox matchCaseCheckBox;
     private EditorPane editor;
-    private int lastIndex = -1;
     private boolean isReplace;
 
     private static String lastSearchTerm = "";

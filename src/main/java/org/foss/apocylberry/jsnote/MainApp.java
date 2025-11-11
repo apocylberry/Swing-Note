@@ -1,7 +1,6 @@
 package org.foss.apocylberry.jsnote;
 
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -131,8 +130,7 @@ public class MainApp extends JFrame {
     private void toggleSpecialCharacters(boolean show) {
         showSpecialCharacters = show;
         prefs.putBoolean("showSpecialChars", show);
-        SpecialCharactersEditorKit.setShowSpecialCharacters(show);
-        editor.repaint();
+                editor.repaint();
     }
 
     private void showFindDialog() {
