@@ -1,3 +1,5 @@
+• Line/column position seems to work now, but LRECL is horridly broken.  The LLM cannot handle it.  I have asked to entirely remove LRECL for now, just running a line to its end and wrapping only on new line characters.  Even that task is beyond the LLM...
+
 • LRECL feature does not work at all.  I've previously described it as the following, but you still don't get it:
 ```
 LRECL feature still does not work. When a line is longer than the "LRECL" value, it should inject a line break at the LRECL location even when word wrap is off. The line number counter should treat this as word wrap, keeping us on the same "line number" even though we have a new line. If the second line of text is longer than the LRECL, it should also wrap, etc., until the final line of text is less than the LRECL value

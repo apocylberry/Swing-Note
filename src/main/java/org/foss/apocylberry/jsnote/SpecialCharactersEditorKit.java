@@ -7,7 +7,13 @@ public class SpecialCharactersEditorKit extends StyledEditorKit {
     public ViewFactory getViewFactory() {
         return new ViewFactory() {
             public View create(Element elem) {
-                return new LRECLWrappedView(elem, 1024);
+                // Use EditorPane's maxLineLength for LRECL
+                int lrecl = 1024;
+                JTextComponent comp = (JTextComponent) elem.getDocument().getProperty("filterNewlines");
+                if (comp instanceof EditorPane) {
+                    lrecl = ((EditorPane) comp).getMaxLineLength();
+                }
+                return new LRECLWrappedView(elem, lrecl);
             }
         };
     }
