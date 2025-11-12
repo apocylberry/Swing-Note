@@ -10,6 +10,7 @@ public class LineNumberView extends JPanel {
     private int lastHeight;
     private static final int MARGIN = 5;
     
+
     public LineNumberView(EditorPane editor) {
         this.editor = editor;
         setPreferredWidth();
@@ -19,6 +20,22 @@ public class LineNumberView extends JPanel {
             public void insertUpdate(DocumentEvent e) { repaint(); }
             public void removeUpdate(DocumentEvent e) { repaint(); }
             public void changedUpdate(DocumentEvent e) { repaint(); }
+        });
+        
+        // Add component listener to repaint when editor view changes
+        editor.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                repaint();
+            }
+        });
+        
+        // Add caret listener to repaint when scrolling occurs
+        editor.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+                repaint();
+            }
         });
     }
     
@@ -30,17 +47,13 @@ public class LineNumberView extends JPanel {
         setPreferredSize(new Dimension(width, 0));
     }
     
+
     private int getLineCount() {
         Element root = editor.getDocument().getDefaultRootElement();
         return root.getElementCount();
     }
     
-    private int getLineNumberAtPoint(int y) {
-        Element root = editor.getDocument().getDefaultRootElement();
-        int pos = editor.viewToModel2D(new Point(0, y));
-        return root.getElementIndex(pos) + 1;
-    }
-    
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -49,30 +62,38 @@ public class LineNumberView extends JPanel {
                             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         
         Rectangle clip = g2d.getClipBounds();
-        int startLine = getLineNumberAtPoint(clip.y);
-        int endLine = getLineNumberAtPoint(clip.y + clip.height);
-        
         int width = getWidth();
         Font font = editor.getFont().deriveFont(Font.PLAIN, editor.getFont().getSize() - 1f);
         g2d.setFont(font);
         g2d.setColor(new Color(100, 100, 100));
         
+        // Get the visible rectangle of the editor to determine which lines are visible
+        Rectangle visibleRect = editor.getVisibleRect();
+        
         Element root = editor.getDocument().getDefaultRootElement();
+        int startLine = root.getElementIndex(editor.viewToModel2D(new Point(0, visibleRect.y)));
+        int endLine = root.getElementIndex(editor.viewToModel2D(new Point(0, visibleRect.y + visibleRect.height)));
+        
         int lastLineStart = -1;
         
-        for (int i = startLine; i <= endLine; i++) {
-            String text = String.valueOf(i);
-            int stringWidth = g2d.getFontMetrics().stringWidth(text);
-            int x = width - stringWidth - MARGIN;
-            
+        // Draw line numbers for visible lines
+        for (int i = startLine; i <= Math.min(endLine, root.getElementCount() - 1); i++) {
             try {
-                Element elem = root.getElement(i-1);
+                Element elem = root.getElement(i);
                 int startOffset = elem.getStartOffset();
                 
                 // Only draw line number if this is not a wrapped continuation
-                Rectangle r = editor.modelToView2D(startOffset).getBounds();
                 if (startOffset > lastLineStart) {
-                    g2d.drawString(text, x, r.y + r.height - 2);
+                    Rectangle r = editor.modelToView2D(startOffset).getBounds();
+                    
+                    // Translate editor coordinates to line number view coordinates
+                    int y = r.y - visibleRect.y + r.height - 2;
+                    
+                    String text = String.valueOf(i + 1);
+                    int stringWidth = g2d.getFontMetrics().stringWidth(text);
+                    int x = width - stringWidth - MARGIN;
+                    
+                    g2d.drawString(text, x, y);
                     lastLineStart = startOffset;
                 }
             } catch (BadLocationException ex) {
@@ -84,6 +105,7 @@ public class LineNumberView extends JPanel {
         g2d.setColor(new Color(220, 220, 220));
         g2d.drawLine(width - 1, clip.y, width - 1, clip.y + clip.height);
         
+
         // Update width if line count changed significantly
         int currentHeight = editor.getHeight();
         if (currentHeight != lastHeight) {

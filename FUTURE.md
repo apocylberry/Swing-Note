@@ -35,8 +35,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 // tab / shift tab on selected block performs indentation
 
 
-// Line numbers sync to the text lines they represent
-
 // Wrapping works.  ~~UNTIL~~ you change the line.  Then it starts wrapping again, even with wrap off.
 
 
