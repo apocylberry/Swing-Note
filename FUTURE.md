@@ -18,8 +18,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 
 
-// INSERT flips back and forth between overtype and standard type
-
 // • beside file name if unsaved changes are present
 1. When the document is entirely new and unsaved, put "Unsaved Document" in the title bar.  When saved, change the title bar to the document name.
 1. When the document has unsaved changes, put a • to the right of the document name in the title bar.  When saved, remove the •
@@ -27,6 +25,10 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 // Read STD OUT on dev tools?
 
+// !OPTIONAL! ability to attach to file and update the window contents
+1. Doing so puts our file into read-only.  We cannot modify the monitored file
+1. If the cursor is not at the end of the document, the cursor and viewport should stay in the exact same place as the document loads below.  If the cursor is at the end of the document, loading the new contents should keep the cursor at the bottom of the document (so that we can monitor new details as they arrive)
+1. Feature should have an on/off toggle in the status bar
 
 
 

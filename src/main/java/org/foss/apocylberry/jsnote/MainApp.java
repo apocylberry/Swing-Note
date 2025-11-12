@@ -28,6 +28,10 @@ public class MainApp extends JFrame {
     private boolean showSpecialCharacters = false;
     private LineNumberView lineNumberView;
     private JScrollPane scrollPane;
+
+    private boolean hasUnsavedChanges = false;
+
+    private String savedContent = ""; // Track the last saved content
     
     private void toggleLineNumbers(boolean show) {
         lineNumberView.setVisible(show);
@@ -216,6 +220,20 @@ public class MainApp extends JFrame {
         // Listen for overtype mode changes
         editor.addPropertyChangeListener("overtypeMode", evt -> updateStatus());
         
+
+        // Listen for document changes to track unsaved changes
+        editor.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                markAsModified();
+            }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                markAsModified();
+            }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                markAsModified();
+            }
+        });
+        
         // Create menu bar
         JMenuBar menuBar = new JMenuBar();
         
@@ -308,6 +326,9 @@ public class MainApp extends JFrame {
         setLocationRelativeTo(null);
         
         updateStatus();
+
+        // Set initial title bar for new unsaved document
+        updateTitleBar();
     }
     
     private void addMenuItem(JMenu menu, String label, KeyStroke accelerator, ActionListener action) {
@@ -329,6 +350,52 @@ public class MainApp extends JFrame {
 
 
 
+    private void markAsModified() {
+        // Compare current content with saved content
+        String currentContent = editor.getText();
+        boolean contentMatches = currentContent.equals(savedContent);
+        
+        if (contentMatches) {
+            // Content matches saved version - clear the unsaved flag
+            if (hasUnsavedChanges) {
+                hasUnsavedChanges = false;
+                updateTitleBar();
+            }
+        } else {
+            // Content differs from saved version - set the unsaved flag
+            if (!hasUnsavedChanges) {
+                hasUnsavedChanges = true;
+                updateTitleBar();
+            }
+        }
+    }
+
+    private void markAsSaved() {
+        // Update saved content snapshot
+        savedContent = editor.getText();
+        if (hasUnsavedChanges) {
+            hasUnsavedChanges = false;
+            updateTitleBar();
+        }
+    }
+
+
+
+    private void updateTitleBar() {
+        String title = "Swing Note: ";
+        if (currentFile == null) {
+            // New unsaved document - always show • until first save
+            title += "Unsaved Document •";
+        } else {
+            // Existing file - show filename and • only if there are unsaved changes
+            title += currentFile.getName();
+            if (hasUnsavedChanges) {
+                title += " •";
+            }
+        }
+        setTitle(title);
+    }
+
     private void updateStatus() {
         cursorPos.setText(editor.getCursorPosition());
         String lrecl = editor.getMaxLineLength() > 0 ? 
@@ -339,11 +406,15 @@ public class MainApp extends JFrame {
         statusBar.setText(lrecl + mode);
     }
     
+
+
     private void newFile() {
         if (checkUnsavedChanges()) {
             editor.setText("");
             currentFile = null;
-            setTitle("Swing Note");
+            savedContent = ""; // New file starts with empty saved content
+            hasUnsavedChanges = false;
+            updateTitleBar();
         }
     }
     
@@ -359,12 +430,16 @@ public class MainApp extends JFrame {
     }
     
 
+
+
     private void openFile(File file) {
         try {
             String content = Files.readString(file.toPath());
             editor.setText(content);
             currentFile = file;
-            setTitle("Swing Note - " + currentFile.getName());
+            savedContent = content; // Store the opened file content
+            hasUnsavedChanges = false;
+            updateTitleBar();
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Error reading file: " + ex.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
@@ -419,11 +494,12 @@ public class MainApp extends JFrame {
         }
     }
     
+
     private void saveToFile(File file) {
         try {
             Files.writeString(file.toPath(), editor.getText());
             currentFile = file;
-            setTitle("Swing Note - " + currentFile.getName());
+            markAsSaved();
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Error saving file: " + ex.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
