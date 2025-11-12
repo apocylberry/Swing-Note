@@ -33,8 +33,16 @@ public class MainApp extends JFrame {
 
     private String savedContent = ""; // Track the last saved content
     
+
     private void toggleLineNumbers(boolean show) {
-        lineNumberView.setVisible(show);
+        if (show) {
+            // Show line numbers and the ruler/gutter
+            scrollPane.setRowHeaderView(lineNumberView);
+            lineNumberView.setVisible(true);
+        } else {
+            // Hide line numbers and remove the ruler/gutter
+            scrollPane.setRowHeaderView(null);
+        }
         prefs.putBoolean("showLineNumbers", show);
     }
 
@@ -181,11 +189,12 @@ public class MainApp extends JFrame {
             }
         });
         
+
         // Create scroll pane with line numbers
         lineNumberView = new LineNumberView(editor);
         scrollPane = new JScrollPane(editor);
-        scrollPane.setRowHeaderView(lineNumberView);
         scrollPane.setVisible(true);
+        // toggleLineNumbers will set the row header view if enabled
         toggleLineNumbers(prefs.getBoolean("showLineNumbers", false));
         add(scrollPane, BorderLayout.CENTER);
         
