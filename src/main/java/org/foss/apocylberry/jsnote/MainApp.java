@@ -212,6 +212,10 @@ public class MainApp extends JFrame {
         // Update cursor position in status bar
         editor.addCaretListener(e -> updateStatus());
         
+
+        // Listen for overtype mode changes
+        editor.addPropertyChangeListener("overtypeMode", evt -> updateStatus());
+        
         // Create menu bar
         JMenuBar menuBar = new JMenuBar();
         
@@ -323,12 +327,16 @@ public class MainApp extends JFrame {
         }
     }
 
+
+
     private void updateStatus() {
         cursorPos.setText(editor.getCursorPosition());
         String lrecl = editor.getMaxLineLength() > 0 ? 
             String.format("LRECL: %d", editor.getMaxLineLength()) :
             "LRECL: none";
-        statusBar.setText(lrecl);
+        // Only show mode when in overtype mode
+        String mode = editor.isOvertypeMode() ? "  |  OVR" : "";
+        statusBar.setText(lrecl + mode);
     }
     
     private void newFile() {

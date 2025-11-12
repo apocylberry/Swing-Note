@@ -20,16 +20,17 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 // INSERT flips back and forth between overtype and standard type
 
+// • beside file name if unsaved changes are present
+1. When the document is entirely new and unsaved, put "Unsaved Document" in the title bar.  When saved, change the title bar to the document name.
+1. When the document has unsaved changes, put a • to the right of the document name in the title bar.  When saved, remove the •
+
 
 // Read STD OUT on dev tools?
 
-// • beside file name if unsaved changes are present
+
 
 
 // tab / shift tab on selected block performs indentation
-
-
-// Undo is broken.  Again.
 
 
 // Line numbers off?  Hide their ruler.

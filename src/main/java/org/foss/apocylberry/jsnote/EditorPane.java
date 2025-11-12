@@ -138,6 +138,8 @@ public class EditorPane extends JTextPane {
     private StyledDocument styledDoc;
     private UndoManager undoManager;
 
+    private boolean overtypeMode = false;
+
     public EditorPane() {
         setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         styledDoc = (StyledDocument) getDocument();
@@ -152,6 +154,8 @@ public class EditorPane extends JTextPane {
         ActionMap actionMap = getActionMap();
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "Undo");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), "Redo");
+
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, 0), "ToggleOvertype");
         actionMap.put("Undo", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -170,6 +174,13 @@ public class EditorPane extends JTextPane {
                         undoManager.redo();
                     }
                 } catch (Exception ex) {}
+            }
+        });
+
+        actionMap.put("ToggleOvertype", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleOvertypeMode();
             }
         });
         putClientProperty("FileChooser.enableLocking", Boolean.FALSE);
@@ -238,5 +249,126 @@ public class EditorPane extends JTextPane {
 
     public UndoManager getUndoManager() {
         return undoManager;
+    }
+
+
+
+    public void toggleOvertypeMode() {
+        overtypeMode = !overtypeMode;
+        updateCursorStyle();
+        firePropertyChange("overtypeMode", !overtypeMode, overtypeMode);
+    }
+
+    public boolean isOvertypeMode() {
+        return overtypeMode;
+    }
+
+    public void setOvertypeMode(boolean overtype) {
+        boolean oldValue = this.overtypeMode;
+        this.overtypeMode = overtype;
+        updateCursorStyle();
+        firePropertyChange("overtypeMode", oldValue, overtype);
+    }
+
+
+    private void updateCursorStyle() {
+        // Save current caret position before changing caret
+        int currentPosition = getCaretPosition();
+        Caret oldCaret = getCaret();
+        
+        if (oldCaret != null) {
+            if (overtypeMode) {
+                // Create a custom caret that appears as a box
+                DefaultCaret newCaret = new DefaultCaret() {
+                    @Override
+                    protected synchronized void damage(Rectangle r) {
+                        if (r != null) {
+                            // Make the cursor width match character width
+                            try {
+                                FontMetrics fm = getFontMetrics(getFont());
+                                r.width = fm.charWidth('W'); // Use width of a typical character
+                            } catch (Exception e) {
+                                r.width = 8; // Fallback width
+                            }
+                            x = r.x;
+                            y = r.y;
+                            width = r.width;
+                            height = r.height;
+                            repaint();
+                        }
+                    }
+                    
+                    @Override
+                    public void paint(Graphics g) {
+                        if (isVisible()) {
+                            try {
+                                JTextComponent component = getComponent();
+                                Rectangle r = component.modelToView2D(getDot()).getBounds();
+                                g.setColor(component.getCaretColor());
+                                FontMetrics fm = g.getFontMetrics();
+                                int charWidth = fm.charWidth('W');
+                                // Draw filled rectangle for box cursor
+                                g.fillRect(r.x, r.y, charWidth, r.height);
+                                // Draw the character in inverse video
+                                try {
+                                    int pos = getDot();
+                                    if (pos < component.getDocument().getLength()) {
+                                        String ch = component.getDocument().getText(pos, 1);
+                                        g.setColor(component.getBackground());
+                                        g.drawString(ch, r.x, r.y + fm.getAscent());
+                                    }
+                                } catch (BadLocationException e) {
+                                    // Ignore
+                                }
+                            } catch (BadLocationException e) {
+                                // Ignore
+                            }
+                        }
+                    }
+                };
+                setCaret(newCaret);
+                newCaret.setBlinkRate(500);
+                // Restore caret position
+                setCaretPosition(currentPosition);
+            } else {
+                // Standard line cursor for insert mode
+                DefaultCaret newCaret = new DefaultCaret();
+                setCaret(newCaret);
+                newCaret.setBlinkRate(500);
+                // Restore caret position
+                setCaretPosition(currentPosition);
+                // Force repaint to clear the old box cursor
+                repaint();
+            }
+        }
+    }
+
+    @Override
+    public void replaceSelection(String content) {
+        if (overtypeMode && content != null && content.length() == 1 && !content.equals("\n")) {
+            try {
+                int caretPos = getCaretPosition();
+                Document doc = getDocument();
+                int docLength = doc.getLength();
+                
+                // Check if we're not at the end of the document and not at the end of a line
+                if (caretPos < docLength) {
+                    String nextChar = doc.getText(caretPos, 1);
+                    // Don't overwrite newline characters
+                    if (!nextChar.equals("\n")) {
+                        // Remove the next character before inserting
+                        doc.remove(caretPos, 1);
+                    }
+                }
+                // Insert the new character
+                doc.insertString(caretPos, content, null);
+            } catch (BadLocationException e) {
+                // Fall back to normal insert if there's an error
+                super.replaceSelection(content);
+            }
+        } else {
+            // Normal insert mode or special characters
+            super.replaceSelection(content);
+        }
     }
 }
