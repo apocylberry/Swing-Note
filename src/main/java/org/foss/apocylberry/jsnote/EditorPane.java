@@ -184,6 +184,7 @@ public class EditorPane extends JTextPane {
         return maxLineLength;
     }
 
+
     public void setLineWrap(boolean wrap) {
         this.lineWrap = wrap;
         String content = getText();
@@ -193,6 +194,13 @@ public class EditorPane extends JTextPane {
             setEditorKit(new NoWrapEditorKit());
         }
         setText(content);
+        // Re-attach the undo manager to the new document
+        styledDoc = (StyledDocument) getDocument();
+        styledDoc.addUndoableEditListener(e -> {
+            if (e.getEdit().isSignificant()) {
+                undoManager.addEdit(e.getEdit());
+            }
+        });
         revalidate();
         repaint();
     }
