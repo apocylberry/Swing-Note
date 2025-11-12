@@ -35,8 +35,11 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 // tab / shift tab on selected block performs indentation
 
 
-// Wrapping works.  ~~UNTIL~~ you change the line.  Then it starts wrapping again, even with wrap off.
+// Wrapping and LRECL seem to work, with one bug:
+// When LRECL wraps the line, the last character on the line before a wrap is inaccessible.
+// Clicking puts the cursor between the second-last and last character.  Right arrow moves to the next line.  That last character is inaccessible.
 
 
+// New document title bar should be the first line of text (up to 16 characters, otherwise 13 characters + `...`)
 
 

@@ -4,11 +4,14 @@ import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
+
 
 public class LineNumberView extends JPanel {
     private EditorPane editor;
     private int lastHeight;
     private static final int MARGIN = 5;
+    private DocumentListener docListener;
     
 
     public LineNumberView(EditorPane editor) {
@@ -16,11 +19,15 @@ public class LineNumberView extends JPanel {
         setPreferredWidth();
         setBackground(new Color(240, 240, 240));
         
-        editor.getDocument().addDocumentListener(new DocumentListener() {
+        // Create document listener once
+        docListener = new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { repaint(); }
             public void removeUpdate(DocumentEvent e) { repaint(); }
             public void changedUpdate(DocumentEvent e) { repaint(); }
-        });
+        };
+        
+        // Attach to current document
+        attachToDocument();
         
         // Add component listener to repaint when editor view changes
         editor.addComponentListener(new java.awt.event.ComponentAdapter() {
@@ -37,14 +44,28 @@ public class LineNumberView extends JPanel {
                 repaint();
             }
         });
+        
+        // Add property change listener to detect document changes
+        editor.addPropertyChangeListener("document", evt -> {
+            if (evt.getOldValue() != null) {
+                ((Document)evt.getOldValue()).removeDocumentListener(docListener);
+            }
+            attachToDocument();
+            repaint();
+        });
     }
     
+    private void attachToDocument() {
+        editor.getDocument().addDocumentListener(docListener);
+    }
+    
+
     private void setPreferredWidth() {
         int lineCount = getLineCount();
         int digits = Math.max(3, String.valueOf(lineCount).length());
         int width = MARGIN * 2 + getFontMetrics(editor.getFont())
             .stringWidth("0".repeat(digits));
-        setPreferredSize(new Dimension(width, 0));
+        setPreferredSize(new Dimension(width, editor.getPreferredSize().height));
     }
     
 
@@ -53,6 +74,18 @@ public class LineNumberView extends JPanel {
         return root.getElementCount();
     }
     
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension d = super.getPreferredSize();
+        // Match the editor's height so our coordinate system aligns
+        d.height = editor.getPreferredSize().height;
+        return d;
+    }
+    
+
+
+
+
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -67,35 +100,37 @@ public class LineNumberView extends JPanel {
         g2d.setFont(font);
         g2d.setColor(new Color(100, 100, 100));
         
-        // Get the visible rectangle of the editor to determine which lines are visible
-        Rectangle visibleRect = editor.getVisibleRect();
+        FontMetrics fm = g2d.getFontMetrics();
+        int fontHeight = fm.getHeight();
         
         Element root = editor.getDocument().getDefaultRootElement();
-        int startLine = root.getElementIndex(editor.viewToModel2D(new Point(0, visibleRect.y)));
-        int endLine = root.getElementIndex(editor.viewToModel2D(new Point(0, visibleRect.y + visibleRect.height)));
+        int lineCount = root.getElementCount();
         
-        int lastLineStart = -1;
-        
-        // Draw line numbers for visible lines
-        for (int i = startLine; i <= Math.min(endLine, root.getElementCount() - 1); i++) {
+        // Draw line numbers for all lines in the document
+        // Since our height matches the editor's height, we're in the same coordinate space
+        for (int line = 0; line < lineCount; line++) {
             try {
-                Element elem = root.getElement(i);
+                Element elem = root.getElement(line);
                 int startOffset = elem.getStartOffset();
                 
-                // Only draw line number if this is not a wrapped continuation
-                if (startOffset > lastLineStart) {
-                    Rectangle r = editor.modelToView2D(startOffset).getBounds();
-                    
-                    // Translate editor coordinates to line number view coordinates
-                    int y = r.y - visibleRect.y + r.height - 2;
-                    
-                    String text = String.valueOf(i + 1);
-                    int stringWidth = g2d.getFontMetrics().stringWidth(text);
-                    int x = width - stringWidth - MARGIN;
-                    
-                    g2d.drawString(text, x, y);
-                    lastLineStart = startOffset;
+                // Get the rectangle for this line's start position
+                Rectangle2D r2d = editor.modelToView2D(startOffset);
+                if (r2d == null) continue;
+                
+                int y = (int) r2d.getY() + (int) r2d.getHeight() - 2;
+                
+                // Only draw if within the clip bounds (for performance)
+                if (y < clip.y - fontHeight || y > clip.y + clip.height + fontHeight) {
+                    continue;
                 }
+                
+                // Draw the line number
+                String text = String.valueOf(line + 1);
+                int stringWidth = fm.stringWidth(text);
+                int x = width - stringWidth - MARGIN;
+                
+                g2d.drawString(text, x, y);
+                
             } catch (BadLocationException ex) {
                 // Skip this line if we can't get its position
             }
