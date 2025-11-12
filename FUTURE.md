@@ -1,3 +1,4 @@
+// TAB KEY TEMPLATES
 I want to implement customizable tab key templates.
  * Tab key action should be customizable.  By default, it should inject the 0x09 (\t) character.  But it should be able to inject spaces as well
  * If "spaces" are selected instead of "Tab Character", the number of spaces inserted by a tab keypress should be calculated to match "where are we right now?" to "where would the next issue of tab put us?
@@ -8,4 +9,33 @@ I want to implement customizable tab key templates.
     * with default tab spaces set to 2 should equal `2, 2, 8, 2` and
     * with default tab spaces set to 4 should equal `4, 4, 8, 4`
 
-Tab key templates should be saved by a user-provided name (such as JCL or Cobol) and an editor should be available to allow editing the template after it's been saved
+Tab key templates should be saved by a user-provided name (such as JCL or Cobol) and an editor should be available to allow editing the template after it's been saved.
+
+> When no tab key template is in use, the status bar should state "Tab" or "Spaces (n)"
+> When a tab key template is in use, the status bar should simply refer to the template name, such as "JCL".
+> Clicking the tab key template from the status bar should give a menu that lets the user pick tabs, spaces, or a custom template name.
+> The number of spaces should be configurable from a file menu option, not from the picker
+
+
+
+// INSERT flips back and forth between overtype and standard type
+
+
+// Read STD OUT on dev tools?
+
+// • beside file name if unsaved changes are present
+
+
+// tab / shift tab on selected block performs indentation
+
+
+// Undo is broken.  Again.
+
+
+// Line numbers off?  Hide their ruler.
+
+// Wrapping works.  ~~UNTIL~~ you change the line.  Then it starts wrapping again, even with wrap off.
+
+
+
+
