@@ -167,9 +167,10 @@ public class MainApp extends JFrame {
         editor = new EditorPane();
         editor.setMaxLineLength(prefs.getInt("maxLineLength", 1024));
         
-        // Add Replace (Ctrl+H) binding
+
+        // Add Replace (Ctrl+H) binding - use WHEN_FOCUSED to override default delete-previous binding
         KeyStroke replaceKey = KeyStroke.getKeyStroke(KeyEvent.VK_H, InputEvent.CTRL_DOWN_MASK);
-        editor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(replaceKey, "showReplace");
+        editor.getInputMap(JComponent.WHEN_FOCUSED).put(replaceKey, "showReplace");
         editor.getActionMap().put("showReplace", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
