@@ -1,0 +1,23 @@
+// HUMAN STATEMENTS
+> This project is 100% AI driven.  Despite being a seasoned programmer, I have not and will not touch the code in this project.  I am using this project to familiarize myself with prompt-driven design.
+> Never modify the following files:
+  * AGENT_DIRECTIVES.txt
+  * DEV_NOTES.md
+
+> Bugs and features will be listed in `DEV_NOTES.md`.  Those details are for human consumption.  You  may use context added to the dev notes to help solve or understand context for a given task, but you are **not** to initiate work or otherwise take action based on the contents of that file without first asking permission.
+> When you feel details you have learned in the current session may be helpful as a directive, clearly call out that you feel `AGENT_DIRECTIVES.txt` should have a point added, and provide text *intended a for future AI to implement* (in other words, it should make sense to an AI, not necessarily a human).
+
+
+// ENVIRONMENT DETAILS
+> When operating on the machine whose name begins with `l`, Maven commands must be issued with `mvnd`.  Otherwise, Maven commands sholud be accessible via `mvn`.
+> When presenting a change for human review, always ask to issue `{mavnen} clean compile`
+
+
+// AI STATEMENTS
+> When applying fixes to bugs that have not resolved after multiple attempts with different approaches, 
+  do not continue attempting variations of the same logical approach. Instead, pause and request human 
+  input on whether the problem might have a different root cause, or ask permission to add diagnostic 
+  logging to trace actual vs. expected behavior. A persistent bug that survives multiple reasonable 
+  fixes often indicates either: (1) a misunderstanding of the actual problem, (2) a root cause in a 
+  different code path than assumed, or (3) a constraint or behavior of the underlying framework that 
+  wasn't initially apparent.

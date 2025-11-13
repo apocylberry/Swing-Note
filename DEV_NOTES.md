@@ -48,6 +48,8 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 // BUG LIST
  * Despite repeated callouts to correct, searching for basic text such as `ipsum` will sometimes highlight the matched text (expected), and will sometimes highlight text following the match (unexpected)
 
+ * If accidentally hovering the Line Number gutter when selecting text, all text from the end of the selected range to line 1 character 1 is selected.  Very disruptive if attempting to select multiple lines of text embedded deep in a large document.
+
  * "Show special characters" does not show the new line, tab, and space characters
 
  * Disabling line numbers should remove the line number bar on the left margin
@@ -68,4 +70,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
  * Ctrl + N should open a new instance of Swing Note
 
- * Ctrl + H deletes a character, it does not display the replace form
+ * Replace button should instantly replace the next instance.  Replace All does not work.
+ 
+ * The replace feature is affected by the same mismatch bug that breaks the find feature.  Text selected on mismatch does not get replaced.
