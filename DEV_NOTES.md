@@ -17,14 +17,7 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 > The number of spaces should be configurable from a file menu option, not from the picker
 
 
-// On ALL dialogues that ask about dropping unsaved changes, Y, N, or ESC should map to "Yes", "No", and "Cancel" respectively.
-// Arrow keys should move between the buttons.
 
-// Closing a document with unsaved changes should prompt, not just disappear.
-
-// Ctrl + N should open a new instance of Swing Note
-
-// Ctrl + H deletes a character, it does not display the replace form
 
 // New document title bar should be the first line of text (up to 16 characters, otherwise 13 characters + `...`)
 
@@ -52,4 +45,27 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 
 
+// BUG LIST
+ * Despite repeated callouts to correct, searching for basic text such as `ipsum` will sometimes highlight the matched text (expected), and will sometimes highlight text following the match (unexpected)
 
+ * "Show special characters" does not show the new line, tab, and space characters
+
+ * Disabling line numbers should remove the line number bar on the left margin
+
+ * Line numbers still do not scroll with text when word wrap is enabled
+
+ * Despite multiple dives in to fix, the project icon.svg still does not show anywhere.  The application still uses the basic Java icon.
+
+ * Despite repeated callouts to correct, searching past the end of the document using F3 / Shift + F3 still does not notify in the task bar!
+
+ * Attempting to open a .pdf resulted in an error.  While I (the human) do not expect to be able to read the contents of non-text files as such, I expect to have their contents loaded and displayed as Notepad would do, as encoded representations of the binary data inside.
+
+ * On ALL dialogues that ask about dropping unsaved changes, Y, N, or ESC should map to "Yes", "No", and "Cancel" respectively.
+ 
+ * Arrow keys should move between the buttons.
+
+ * Closing a document with unsaved changes should prompt, not just disappear.
+
+ * Ctrl + N should open a new instance of Swing Note
+
+ * Ctrl + H deletes a character, it does not display the replace form
