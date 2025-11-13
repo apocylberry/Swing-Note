@@ -37,23 +37,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 
 
-// • beside file name if unsaved changes are present
-// Actually, • does not appear when an existing document gets modified.  This behavior was added and worked...
-1. When the document is entirely new and unsaved, put "Unsaved Document" in the title bar.  When saved, change the title bar to the document name.
-1. When the document has unsaved changes, put a • to the right of the document name in the title bar.  When saved, remove the •
-^^^
-// When we change the file contents, append a `•` to the file name in the title bar.  This works.  I want to expand the behavior:
-    * Change the current `•` character to U+25CF BLACK CIRCLE `●`
-    * If the underlying file contents are modified since we opened the file but we have made no edits, append a "dotted circle" U-25CC `◌` instead
-    * If both the underlying file is changed **and** we have changed our own contents since opening the file, append a "white circle" U-25CB `○`
-//So, to summarize the protocol:
-    * Unmodified:                   ` `
-    * Modified in memory only:      `●`
-    * Modified on disk only:        `◌`
-    * Modified on disk AND memory:  `○`
-
-
-
 
 
 // BUG LIST

@@ -12,12 +12,15 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.nio.file.ClosedWatchServiceException;
 
 public class MainApp extends JFrame {
     private EditorPane editor;
     private JLabel statusBar;
     private JLabel messageArea;
     private JLabel cursorPos;
+    private JLabel reloadFileLabel;
     private File currentFile = null;
     private Preferences prefs;
     private String dateFormat;
@@ -33,6 +36,11 @@ public class MainApp extends JFrame {
 
     private String savedContent = ""; // Track the last saved content
     
+    // File watcher for detecting external file modifications
+    private WatchService watchService = null;
+    private Thread watchServiceThread = null;
+    private boolean diskModified = false; // Track if file was modified on disk
+    private boolean suppressWatcherEvents = false; // Suppress file watcher events during our own saves
 
     private void toggleLineNumbers(boolean show) {
         if (show) {
@@ -205,6 +213,16 @@ public class MainApp extends JFrame {
         
         messageArea = new JLabel(" ");
         statusBar = new JLabel(" ");
+        reloadFileLabel = new JLabel("Reload File");
+        reloadFileLabel.setForeground(new Color(0, 0, 255)); // Blue for clickable
+        reloadFileLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        reloadFileLabel.setVisible(false);
+        reloadFileLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                reloadFileFromDisk();
+            }
+        });
         
         JPanel leftStatus = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         leftStatus.setOpaque(false);
@@ -213,6 +231,8 @@ public class MainApp extends JFrame {
         
         JPanel rightStatus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         rightStatus.setOpaque(false);
+        rightStatus.add(reloadFileLabel);
+        rightStatus.add(new JLabel(" | "));
         rightStatus.add(statusBar);
         
         messageArea.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
@@ -389,9 +409,72 @@ public class MainApp extends JFrame {
     private void markAsSaved() {
         // Update saved content snapshot
         savedContent = editor.getText();
+        diskModified = false; // Clear disk modified flag when we save
         if (hasUnsavedChanges) {
             hasUnsavedChanges = false;
             updateTitleBar();
+        }
+    }
+
+    private void reloadFileFromDisk() {
+        if (currentFile == null) {
+            return;
+        }
+        
+        // If we have unsaved changes, warn the user
+        if (hasUnsavedChanges) {
+            int result = JOptionPane.showConfirmDialog(this,
+                "File has been modified on disk. Unsaved changes will be lost. Reload anyway?",
+                "Reload File",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+            
+            if (result != JOptionPane.OK_OPTION) {
+                return; // User canceled
+            }
+        }
+        
+        // Save current cursor position and viewport position before reload
+        int cursorPosition = editor.getCaretPosition();
+        int viewportY = editor.getVisibleRect().y;
+        
+        // Reload the file from disk
+        try {
+            suppressWatcherEvents = true;
+            String content = Files.readString(currentFile.toPath());
+            savedContent = content;
+            editor.setText(content);
+            editor.clearUndoHistory();
+            hasUnsavedChanges = false;
+            diskModified = false;
+            
+            // Restore cursor position, or place at end if position no longer exists
+            if (cursorPosition <= editor.getDocument().getLength()) {
+                editor.setCaretPosition(cursorPosition);
+            } else {
+                editor.setCaretPosition(editor.getDocument().getLength());
+            }
+            
+            // Restore viewport position
+            SwingUtilities.invokeLater(() -> {
+                Rectangle viewRect = editor.getVisibleRect();
+                viewRect.y = viewportY;
+                editor.scrollRectToVisible(viewRect);
+            });
+            
+            updateTitleBar();
+            setStatusMessage("File reloaded from disk");
+            Thread.sleep(150);
+            suppressWatcherEvents = false;
+        } catch (IOException ex) {
+            suppressWatcherEvents = false;
+            JOptionPane.showMessageDialog(this,
+                "Error reading file: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+        } catch (InterruptedException ex) {
+            suppressWatcherEvents = false;
+            // Ignore interruption
         }
     }
 
@@ -400,13 +483,35 @@ public class MainApp extends JFrame {
     private void updateTitleBar() {
         String title = "Swing Note: ";
         if (currentFile == null) {
-            // New unsaved document - always show • until first save
-            title += "Unsaved Document •";
+            // New unsaved document - always show ● until first save
+            title += "Unsaved Document ●";
+            if (reloadFileLabel != null) {
+                reloadFileLabel.setVisible(false);
+            }
         } else {
-            // Existing file - show filename and • only if there are unsaved changes
+            // Existing file - show filename with appropriate indicator
             title += currentFile.getName();
-            if (hasUnsavedChanges) {
-                title += " •";
+            
+            // Determine which indicator to show:
+            // ● = Modified in memory only (U+25CF BLACK CIRCLE)
+            // ⦿ = Modified on disk AND memory (U+2A6F CIRCLED BULLET)
+            // ◯ = Modified on disk only (U+25EF LARGE CIRCLE)
+            // (space) = Unmodified
+            //
+            // Logic: Memory modifications always show ●, disk modifications always show a circle
+            
+            if (hasUnsavedChanges && diskModified) {
+                title += " ⦿"; // Modified on disk AND memory (circled bullet = both)
+            } else if (diskModified) {
+                title += " ◯"; // Modified on disk only (large open circle)
+            } else if (hasUnsavedChanges) {
+                title += " ●"; // Modified in memory only (solid black circle)
+            }
+            // else: no indicator for unmodified files
+            
+            // Show reload button only when file is modified on disk
+            if (reloadFileLabel != null) {
+                reloadFileLabel.setVisible(diskModified);
             }
         }
         setTitle(title);
@@ -431,6 +536,8 @@ public class MainApp extends JFrame {
             editor.clearUndoHistory(); // Clear undo history for new file
             currentFile = null;
             hasUnsavedChanges = false;
+            diskModified = false;
+            stopFileWatcher();
             updateTitleBar();
         }
     }
@@ -456,9 +563,12 @@ public class MainApp extends JFrame {
             savedContent = content; // Store the opened file content BEFORE setText to prevent document listener from marking as modified
             editor.setText(content);
             editor.clearUndoHistory(); // Clear undo history for newly opened file
+            editor.setCaretPosition(0); // Place cursor at position 1,1 (offset 0)
             currentFile = file;
             hasUnsavedChanges = false;
+            diskModified = false;
             updateTitleBar();
+            startFileWatcher(file); // Start monitoring for external changes
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Error reading file: " + ex.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
@@ -516,12 +626,21 @@ public class MainApp extends JFrame {
 
     private void saveToFile(File file) {
         try {
+            // Suppress watcher events during save
+            suppressWatcherEvents = true;
             Files.writeString(file.toPath(), editor.getText());
             currentFile = file;
             markAsSaved();
+            // Re-enable watcher events after a brief delay
+            Thread.sleep(150);
+            suppressWatcherEvents = false;
         } catch (IOException ex) {
+            suppressWatcherEvents = false;
             JOptionPane.showMessageDialog(this, "Error saving file: " + ex.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (InterruptedException ex) {
+            suppressWatcherEvents = false;
+            // Ignore interruption
         }
     }
     
@@ -622,6 +741,93 @@ public class MainApp extends JFrame {
                     JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+    
+    /**
+     * Start watching a file for external modifications using WatchService.
+     * Stops any previous watch service first.
+     */
+    private void startFileWatcher(File file) {
+        stopFileWatcher();
+        
+        if (file == null) {
+            return;
+        }
+        
+        try {
+            watchService = FileSystems.getDefault().newWatchService();
+            Path filePath = file.toPath();
+            Path parentDir = filePath.getParent();
+            
+            // Register the parent directory for modifications
+            parentDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+            
+            // Start a background thread to monitor for changes
+            watchServiceThread = new Thread(() -> {
+                try {
+                    while (watchService != null) {
+                        WatchKey key = watchService.poll(500, java.util.concurrent.TimeUnit.MILLISECONDS);
+                        
+                        if (key == null) {
+                            continue;
+                        }
+                        
+                        for (WatchEvent<?> event : key.pollEvents()) {
+                            if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+                                Path changedPath = (Path) event.context();
+                                
+                                // Check if the modified file is our current file
+                                if (changedPath.equals(filePath.getFileName())) {
+                                    // Skip this event if we're suppressing (during our own save)
+                                    if (!suppressWatcherEvents) {
+                                        SwingUtilities.invokeLater(() -> {
+                                            diskModified = true;
+                                            updateTitleBar();
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        
+                        key.reset();
+                    }
+                } catch (InterruptedException | ClosedWatchServiceException e) {
+                    // Expected when service is closed
+                }
+            }, "FileWatcher");
+            
+            watchServiceThread.setDaemon(true);
+            watchServiceThread.start();
+            
+        } catch (IOException ex) {
+            System.err.println("Error starting file watcher: " + ex.getMessage());
+        }
+    }
+    
+    /**
+     * Stop the file watcher thread and close the WatchService.
+     */
+    private void stopFileWatcher() {
+        if (watchService != null) {
+            try {
+                watchService.close();
+            } catch (IOException ex) {
+                System.err.println("Error closing watch service: " + ex.getMessage());
+            }
+            watchService = null;
+        }
+        
+        if (watchServiceThread != null) {
+            try {
+                // Wait for thread to finish (max 1 second)
+                watchServiceThread.join(1000);
+            } catch (InterruptedException ex) {
+                // Ignore
+            }
+            watchServiceThread = null;
+        }
+        
+        diskModified = false;
     }
     
     public static void main(String[] args) {
