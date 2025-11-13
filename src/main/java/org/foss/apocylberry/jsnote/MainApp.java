@@ -261,18 +261,24 @@ public class MainApp extends JFrame {
         addMenuItem(editMenu, "Undo", KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), e -> {
             try {
                 if (editor.getUndoManager().canUndo()) {
+                    System.err.println("DEBUG: Undo called - canUndo before: true");
                     editor.getUndoManager().undo();
+                    System.err.println("DEBUG: Undo completed - canUndo after: " + editor.getUndoManager().canUndo());
                 }
             } catch (Exception ex) {
+                System.err.println("DEBUG: Undo failed: " + ex.getMessage());
                 // Ignore undo errors
             }
         });
         addMenuItem(editMenu, "Redo", KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), e -> {
             try {
                 if (editor.getUndoManager().canRedo()) {
+                    System.err.println("DEBUG: Redo called - canRedo before: true");
                     editor.getUndoManager().redo();
+                    System.err.println("DEBUG: Redo completed - canRedo after: " + editor.getUndoManager().canRedo());
                 }
             } catch (Exception ex) {
+                System.err.println("DEBUG: Redo failed: " + ex.getMessage());
                 // Ignore redo errors
             }
         });
@@ -420,9 +426,9 @@ public class MainApp extends JFrame {
 
     private void newFile() {
         if (checkUnsavedChanges()) {
-
             savedContent = ""; // New file starts with empty saved content - set BEFORE setText
             editor.setText("");
+            editor.clearUndoHistory(); // Clear undo history for new file
             currentFile = null;
             hasUnsavedChanges = false;
             updateTitleBar();
@@ -449,6 +455,7 @@ public class MainApp extends JFrame {
 
             savedContent = content; // Store the opened file content BEFORE setText to prevent document listener from marking as modified
             editor.setText(content);
+            editor.clearUndoHistory(); // Clear undo history for newly opened file
             currentFile = file;
             hasUnsavedChanges = false;
             updateTitleBar();

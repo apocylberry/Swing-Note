@@ -6,6 +6,7 @@
 
 > Bugs and features will be listed in `DEV_NOTES.md`.  Those details are for human consumption.  You  may use context added to the dev notes to help solve or understand context for a given task, but you are **not** to initiate work or otherwise take action based on the contents of that file without first asking permission.
 > When you feel details you have learned in the current session may be helpful as a directive, clearly call out that you feel `AGENT_DIRECTIVES.txt` should have a point added, and provide text *intended a for future AI to implement* (in other words, it should make sense to an AI, not necessarily a human).
+> I do not commit features until they are in a working, or at least acceptable, state.  If a feature is partly working, and gets obliterated on successive edits, the partially-working state will **not** be in the commit history.
 
 
 // ENVIRONMENT DETAILS

@@ -8,6 +8,37 @@ import javax.swing.undo.*;
 
 public class EditorPane extends JTextPane {
 
+    /**
+     * Custom UndoManager that properly preserves undo history when adding CompoundEdits.
+     * The standard UndoManager clears the undo stack when a new edit is added, which
+     * prevents access to edits prior to a CompoundEdit. This implementation preserves that history.
+     */
+    private static class HistoryPreservingUndoManager extends UndoManager {
+        private int trackedLimit = -1;
+        
+        @Override
+        public synchronized void setLimit(int l) {
+            trackedLimit = l;
+            super.setLimit(l);
+        }
+        
+        @Override
+        public synchronized boolean addEdit(UndoableEdit e) {
+            String editType = e instanceof CompoundEdit ? "CompoundEdit" : e.getClass().getSimpleName();
+            System.err.println("DEBUG: HistoryPreservingUndoManager.addEdit for " + editType);
+            System.err.println("DEBUG:   Current edits count before: " + edits.size());
+            System.err.println("DEBUG:   Current limit: " + trackedLimit);
+            
+            // Call super.addEdit which will add the edit
+            boolean result = super.addEdit(e);
+            
+            System.err.println("DEBUG:   Current edits count after: " + edits.size());
+            System.err.println("DEBUG:   canUndo after addEdit: " + this.canUndo());
+            
+            return result;
+        }
+    }
+
     private static class WrapEditorKit extends StyledEditorKit {
         ViewFactory defaultFactory = new WrapColumnFactory();
         public ViewFactory getViewFactory() {
@@ -319,19 +350,60 @@ public class EditorPane extends JTextPane {
     private boolean wrapStyleWord = false;
     private StyledDocument styledDoc;
     private UndoManager undoManager;
+    private ProxyUndoListener proxyUndoListener;
 
     private boolean overtypeMode = false;
+
+    /**
+     * Proxy listener that can toggle between sending edits to the UndoManager
+     * or suppressing edits during replace operations.
+     */
+    private class ProxyUndoListener implements javax.swing.event.UndoableEditListener {
+        private boolean suppressEdits = false;
+
+        @Override
+        public void undoableEditHappened(javax.swing.event.UndoableEditEvent e) {
+            // Skip processing if we're in suppress mode
+            if (suppressEdits) {
+                System.err.println("DEBUG: ProxyUndoListener - suppressing edit in replace mode");
+                return;
+            }
+            
+            if (e.getEdit().isSignificant()) {
+                undoManager.addEdit(e.getEdit());
+                System.err.println("DEBUG: Added to UndoManager - " + e.getEdit().getPresentationName());
+            }
+        }
+
+        public void setSuppressMode(boolean suppress) {
+            this.suppressEdits = suppress;
+            if (suppress) {
+                System.err.println("DEBUG: ProxyUndoListener - SUPPRESS mode ENABLED");
+            } else {
+                System.err.println("DEBUG: ProxyUndoListener - SUPPRESS mode DISABLED");
+            }
+        }
+
+        public void startCompoundCapture(CompoundEdit compound) {
+            // Deprecated - kept for compatibility
+            this.suppressEdits = true;
+            System.err.println("DEBUG: ProxyUndoListener.startCompoundCapture - compound mode ENABLED");
+        }
+
+        public void endCompoundCapture() {
+            // Deprecated - kept for compatibility
+            this.suppressEdits = false;
+            System.err.println("DEBUG: ProxyUndoListener.endCompoundCapture - compound mode DISABLED");
+        }
+    }
 
     public EditorPane() {
         setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         styledDoc = (StyledDocument) getDocument();
-        undoManager = new UndoManager();
+        undoManager = new HistoryPreservingUndoManager();
         undoManager.setLimit(-1); // Unlimited undo
-        styledDoc.addUndoableEditListener(e -> {
-            if (e.getEdit().isSignificant()) {
-                undoManager.addEdit(e.getEdit());
-            }
-        });
+        System.err.println("DEBUG: EditorPane init - Document: " + System.identityHashCode(styledDoc) + ", UndoManager: " + System.identityHashCode(undoManager));
+        attachUndoListener();
         InputMap inputMap = getInputMap(JComponent.WHEN_FOCUSED);
         ActionMap actionMap = getActionMap();
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "Undo");
@@ -369,7 +441,35 @@ public class EditorPane extends JTextPane {
         setLineWrap(false);
     }
 
-
+    /**
+     * Attach the undo manager as a listener to the current document.
+     * This must be called whenever the document changes (e.g., after setEditorKit).
+     */
+    private void attachUndoListener() {
+        StyledDocument newDoc = (StyledDocument) getDocument();
+        if (newDoc == null) {
+            return;
+        }
+        
+        // If the document has changed, we need to update undo manager attachment
+        if (styledDoc != newDoc) {
+            // Remove old undo manager from old document
+            if (styledDoc != null) {
+                styledDoc.removeUndoableEditListener(undoManager);
+                System.err.println("DEBUG: Removed UndoManager from old document " + System.identityHashCode(styledDoc));
+            }
+            
+            // Attach undo manager directly to new document
+            newDoc.addUndoableEditListener(undoManager);
+            System.err.println("DEBUG: Attached UndoManager directly to document " + System.identityHashCode(newDoc));
+        } else if (styledDoc == null) {
+            // First time - attach the undo manager
+            newDoc.addUndoableEditListener(undoManager);
+            System.err.println("DEBUG: Attached UndoManager directly to document " + System.identityHashCode(newDoc));
+        }
+        
+        styledDoc = newDoc;
+    }
 
 
     public void setMaxLineLength(int length) {
@@ -394,11 +494,7 @@ public class EditorPane extends JTextPane {
                 }
                 
                 // Re-attach the undo manager to the new document
-                styledDoc = (StyledDocument) getDocument();
-                styledDoc.addUndoableEditListener(e -> {
-                    if (e.getEdit().getPresentationName().equals("style change")) return;
-                    undoManager.addEdit(e.getEdit());
-                });
+                attachUndoListener();
             }
         }
     }
@@ -410,20 +506,17 @@ public class EditorPane extends JTextPane {
 
     public void setLineWrap(boolean wrap) {
         this.lineWrap = wrap;
+        System.err.println("DEBUG: setLineWrap called, current Document: " + System.identityHashCode(getDocument()));
         String content = getText();
         if (wrap) {
             setEditorKit(new WrapEditorKit());
         } else {
             setEditorKit(new NoWrapEditorKit());
         }
+        System.err.println("DEBUG: After setEditorKit, new Document: " + System.identityHashCode(getDocument()));
         setText(content);
         // Re-attach the undo manager to the new document
-        styledDoc = (StyledDocument) getDocument();
-        styledDoc.addUndoableEditListener(e -> {
-            if (e.getEdit().isSignificant()) {
-                undoManager.addEdit(e.getEdit());
-            }
-        });
+        attachUndoListener();
         revalidate();
         repaint();
     }
@@ -463,7 +556,43 @@ public class EditorPane extends JTextPane {
         return undoManager;
     }
 
+    public void clearUndoHistory() {
+        System.err.println("DEBUG: clearUndoHistory called, Document: " + System.identityHashCode(getDocument()) + ", styledDoc: " + System.identityHashCode(styledDoc));
+        System.err.println("DEBUG: UndoManager canUndo before clear: " + undoManager.canUndo() + ", canRedo: " + undoManager.canRedo());
+        undoManager.discardAllEdits();
+        System.err.println("DEBUG: UndoManager canUndo after clear: " + undoManager.canUndo());
+    }
 
+    /**
+     * Start capturing edits into a CompoundEdit instead of the UndoManager.
+     * Used by Replace All to group multiple edits into a single undo action.
+     */
+    public void startCompoundCapture(CompoundEdit compound) {
+        // Ensure the proxy listener is attached to the current document
+        attachUndoListener();
+        
+        if (proxyUndoListener != null) {
+            proxyUndoListener.startCompoundCapture(compound);
+            System.err.println("DEBUG: Started compound edit capture on proxy for document " + System.identityHashCode(getDocument()));
+        }
+    }
+
+    /**
+     * Stop capturing edits into a CompoundEdit and resume normal UndoManager operations.
+     */
+    public void endCompoundCapture() {
+        if (proxyUndoListener != null) {
+            proxyUndoListener.endCompoundCapture();
+            System.err.println("DEBUG: Ended compound edit capture on proxy for document " + System.identityHashCode(getDocument()));
+        }
+    }
+
+    /**
+     * Get the ProxyUndoListener for manual listener management.
+     */
+    public javax.swing.event.UndoableEditListener getProxyUndoListener() {
+        return proxyUndoListener;
+    }
 
     public void toggleOvertypeMode() {
         overtypeMode = !overtypeMode;

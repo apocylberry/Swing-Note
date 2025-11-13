@@ -21,11 +21,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 // New document title bar should be the first line of text (up to 16 characters, otherwise 13 characters + `...`)
 
-// • beside file name if unsaved changes are present
-// Actually, • does not appear when an existing document gets modified.  This behavior was added and worked...
-1. When the document is entirely new and unsaved, put "Unsaved Document" in the title bar.  When saved, change the title bar to the document name.
-1. When the document has unsaved changes, put a • to the right of the document name in the title bar.  When saved, remove the •
-
 // Connect to dev tools to read std out?
 
 // !OPTIONAL! ability to attach to file and update the window contents
@@ -42,21 +37,33 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 
 
+// • beside file name if unsaved changes are present
+// Actually, • does not appear when an existing document gets modified.  This behavior was added and worked...
+1. When the document is entirely new and unsaved, put "Unsaved Document" in the title bar.  When saved, change the title bar to the document name.
+1. When the document has unsaved changes, put a • to the right of the document name in the title bar.  When saved, remove the •
+^^^
+// When we change the file contents, append a `•` to the file name in the title bar.  This works.  I want to expand the behavior:
+    * Change the current `•` character to U+25CF BLACK CIRCLE `●`
+    * If the underlying file contents are modified since we opened the file but we have made no edits, append a "dotted circle" U-25CC `◌` instead
+    * If both the underlying file is changed **and** we have changed our own contents since opening the file, append a "white circle" U-25CB `○`
+//So, to summarize the protocol:
+    * Unmodified:                   ` `
+    * Modified in memory only:      `●`
+    * Modified on disk only:        `◌`
+    * Modified on disk AND memory:  `○`
+
+
 
 
 
 // BUG LIST
- * Despite repeated callouts to correct, searching for basic text such as `ipsum` will sometimes highlight the matched text (expected), and will sometimes highlight text following the match (unexpected)
+ * Replace All breaks the undo stack.  Before a replace all, undo is unlimited.  After a replace all, undo is reset.  Future edits after the replace all should all be avaialble to back out, but nothing prior to the replace all can be backed out.
+
+ * The Windows scaling bug when a 4K monitor is present and scaling is set >100%!  Ugh!  The UI is almost unreadable in that scenario.
 
  * If accidentally hovering the Line Number gutter when selecting text, all text from the end of the selected range to line 1 character 1 is selected.  Very disruptive if attempting to select multiple lines of text embedded deep in a large document.
 
  * "Show special characters" does not show the new line, tab, and space characters
-
- * Disabling line numbers should remove the line number bar on the left margin
-
- * Line numbers still do not scroll with text when word wrap is enabled
-
- * Despite multiple dives in to fix, the project icon.svg still does not show anywhere.  The application still uses the basic Java icon.
 
  * Despite repeated callouts to correct, searching past the end of the document using F3 / Shift + F3 still does not notify in the task bar!
 
@@ -72,4 +79,4 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
  * Replace button should instantly replace the next instance.  Replace All does not work.
  
- * The replace feature is affected by the same mismatch bug that breaks the find feature.  Text selected on mismatch does not get replaced.
+ * When tabbing between fields in the Replace dialog, the new field should enter focus with the text selected
