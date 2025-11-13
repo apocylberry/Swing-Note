@@ -419,9 +419,10 @@ public class MainApp extends JFrame {
 
     private void newFile() {
         if (checkUnsavedChanges()) {
+
+            savedContent = ""; // New file starts with empty saved content - set BEFORE setText
             editor.setText("");
             currentFile = null;
-            savedContent = ""; // New file starts with empty saved content
             hasUnsavedChanges = false;
             updateTitleBar();
         }
@@ -444,9 +445,10 @@ public class MainApp extends JFrame {
     private void openFile(File file) {
         try {
             String content = Files.readString(file.toPath());
+
+            savedContent = content; // Store the opened file content BEFORE setText to prevent document listener from marking as modified
             editor.setText(content);
             currentFile = file;
-            savedContent = content; // Store the opened file content
             hasUnsavedChanges = false;
             updateTitleBar();
         } catch (IOException ex) {

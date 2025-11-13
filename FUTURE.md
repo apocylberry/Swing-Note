@@ -17,20 +17,28 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 > The number of spaces should be configurable from a file menu option, not from the picker
 
 
+// On ALL dialogues that ask about dropping unsaved changes, Y, N, or ESC should map to "Yes", "No", and "Cancel" respectively.
+// Arrow keys should move between the buttons.
+
+// Closing a document with unsaved changes should prompt, not just disappear.
+
+// Ctrl + N should open a new instance of Swing Note
+
+// Ctrl + H deletes a character, it does not display the replace form
+
+// New document title bar should be the first line of text (up to 16 characters, otherwise 13 characters + `...`)
 
 // • beside file name if unsaved changes are present
+// Actually, • does not appear when an existing document gets modified.  This behavior was added and worked...
 1. When the document is entirely new and unsaved, put "Unsaved Document" in the title bar.  When saved, change the title bar to the document name.
 1. When the document has unsaved changes, put a • to the right of the document name in the title bar.  When saved, remove the •
 
-
-// Read STD OUT on dev tools?
+// Connect to dev tools to read std out?
 
 // !OPTIONAL! ability to attach to file and update the window contents
 1. Doing so puts our file into read-only.  We cannot modify the monitored file
 1. If the cursor is not at the end of the document, the cursor and viewport should stay in the exact same place as the document loads below.  If the cursor is at the end of the document, loading the new contents should keep the cursor at the bottom of the document (so that we can monitor new details as they arrive)
 1. Feature should have an on/off toggle in the status bar
-
-
 
 // tab / shift tab on selected block performs indentation
 
@@ -40,6 +48,8 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 // Clicking puts the cursor between the second-last and last character.  Right arrow moves to the next line.  That last character is inaccessible.
 
 
-// New document title bar should be the first line of text (up to 16 characters, otherwise 13 characters + `...`)
+
+
+
 
 
