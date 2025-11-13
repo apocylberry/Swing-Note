@@ -40,8 +40,12 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 // In File Menu, "New" now has a slide-out option "Reopen in new window" that creates a new window, tied to the same parent file (if we're attached to a file).  If file edits are present, additional options are: "keep modifications" or "from original file"
 
+// Add a count of total characters in the status bar
+
 
 // BUG LIST
+ * Opening a large file (such as a 32MB log file) locks up on load for a very long time.  Notepad, on the other hand, opens the same file almost immediately.
+
  * Replace All breaks the undo stack.  Before a replace all, undo is unlimited.  After a replace all, undo is reset.  Future edits after the replace all should all be avaialble to back out, but nothing prior to the replace all can be backed out.
 
  * The Windows scaling bug when a 4K monitor is present and scaling is set >100%!  Ugh!  The UI is almost unreadable in that scenario.
