@@ -41,6 +41,7 @@ public class MainApp extends JFrame {
     private Thread watchServiceThread = null;
     private boolean diskModified = false; // Track if file was modified on disk
     private boolean suppressWatcherEvents = false; // Suppress file watcher events during our own saves
+    private boolean isMainInstance = true;
 
     private void toggleLineNumbers(boolean show) {
         if (show) {
@@ -55,6 +56,11 @@ public class MainApp extends JFrame {
     }
 
     public MainApp() {
+        this(true);
+    }
+    
+    public MainApp(boolean isMainInstance) {
+        this.isMainInstance = isMainInstance;
         prefs = Preferences.userNodeForPackage(MainApp.class);
         timestampManager = new TimestampFormatManager(prefs);
         dateFormat = prefs.get("dateFormat", timestampManager.getDefaultFormat());
@@ -169,7 +175,7 @@ public class MainApp extends JFrame {
 
     private void initComponents() {
         setTitle("Swing Note");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(isMainInstance ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
         
         // Create editor
         editor = new EditorPane();
@@ -530,15 +536,30 @@ public class MainApp extends JFrame {
 
 
     private void newFile() {
-        if (checkUnsavedChanges()) {
-            savedContent = ""; // New file starts with empty saved content - set BEFORE setText
-            editor.setText("");
-            editor.clearUndoHistory(); // Clear undo history for new file
-            currentFile = null;
-            hasUnsavedChanges = false;
-            diskModified = false;
-            stopFileWatcher();
-            updateTitleBar();
+        try {
+            // Launch a new instance by spawning a new JVM process
+            String javaHome = System.getProperty("java.home");
+            String javaBinary = javaHome + File.separator + "bin" + File.separator + 
+                (System.getProperty("os.name").toLowerCase().contains("win") ? "java.exe" : "java");
+            String classpath = System.getProperty("java.class.path");
+            String mainClass = "org.foss.apocylberry.jsnote.MainApp";
+            
+            try {
+                ProcessBuilder pb = new ProcessBuilder(javaBinary, "-cp", classpath, mainClass);
+                pb.start();
+            } catch (IOException ex) {
+                // If java binary not found (e.g., in packaged build), use reflection to launch
+                // This creates a new window in the same JVM
+                SwingUtilities.invokeLater(() -> {
+                    MainApp newApp = new MainApp(false);
+                    newApp.setVisible(true);
+                });
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error launching new instance: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
     

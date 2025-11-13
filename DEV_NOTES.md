@@ -36,7 +36,9 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 // Clicking puts the cursor between the second-last and last character.  Right arrow moves to the next line.  That last character is inaccessible.
 
 
+// Open now has "Open in this window" and "Open in new window" options
 
+// In File Menu, "New" now has a slide-out option "Reopen in new window" that creates a new window, tied to the same parent file (if we're attached to a file).  If file edits are present, additional options are: "keep modifications" or "from original file"
 
 
 // BUG LIST
@@ -57,8 +59,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
  * Arrow keys should move between the buttons.
 
  * Closing a document with unsaved changes should prompt, not just disappear.
-
- * Ctrl + N should open a new instance of Swing Note
 
  * Replace button should instantly replace the next instance.  Replace All does not work.
  
