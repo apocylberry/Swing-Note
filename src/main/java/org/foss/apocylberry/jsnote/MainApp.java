@@ -20,6 +20,7 @@ public class MainApp extends JFrame {
     private JLabel statusBar;
     private JLabel messageArea;
     private JLabel cursorPos;
+    private JLabel charCounter;
     private JLabel reloadFileLabel;
     private File currentFile = null;
     private Preferences prefs;
@@ -233,7 +234,10 @@ public class MainApp extends JFrame {
         JPanel leftStatus = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         leftStatus.setOpaque(false);
         cursorPos = new JLabel("");
+        charCounter = new JLabel("");
         leftStatus.add(cursorPos);
+        leftStatus.add(new JLabel(" | "));
+        leftStatus.add(charCounter);
         
         JPanel rightStatus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         rightStatus.setOpaque(false);
@@ -525,12 +529,18 @@ public class MainApp extends JFrame {
 
     private void updateStatus() {
         cursorPos.setText(editor.getCursorPosition());
+        updateCharacterCount();
         String lrecl = editor.getMaxLineLength() > 0 ? 
             String.format("LRECL: %d", editor.getMaxLineLength()) :
             "LRECL: none";
         // Only show mode when in overtype mode
         String mode = editor.isOvertypeMode() ? "  |  OVR" : "";
         statusBar.setText(lrecl + mode);
+    }
+    
+    private void updateCharacterCount() {
+        int totalChars = editor.getDocument().getLength();
+        charCounter.setText(String.format("Chars: %d", totalChars));
     }
     
 

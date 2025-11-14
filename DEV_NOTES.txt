@@ -23,11 +23,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 // Connect to dev tools to read std out?
 
-// !OPTIONAL! ability to attach to file and update the window contents
-1. Doing so puts our file into read-only.  We cannot modify the monitored file
-1. If the cursor is not at the end of the document, the cursor and viewport should stay in the exact same place as the document loads below.  If the cursor is at the end of the document, loading the new contents should keep the cursor at the bottom of the document (so that we can monitor new details as they arrive)
-1. Feature should have an on/off toggle in the status bar
-
 // tab / shift tab on selected block performs indentation
 
 
@@ -39,8 +34,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 // Open now has "Open in this window" and "Open in new window" options
 
 // In File Menu, "New" now has a slide-out option "Reopen in new window" that creates a new window, tied to the same parent file (if we're attached to a file).  If file edits are present, additional options are: "keep modifications" or "from original file"
-
-// Add a count of total characters in the status bar
 
 
 // BUG LIST
