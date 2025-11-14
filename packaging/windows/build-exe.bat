@@ -21,12 +21,16 @@ if not exist "pom.xml" (
 )
 
 REM Step 1: Clean build
-echo [1/4] Building JAR with Maven...
-mvnd clean package
+echo [1/4] Building JAR with Maven Daemon...
+mvn clean package
 if errorlevel 1 (
-    echo ERROR: Maven build failed!
-    pause
-    exit /b 1
+    echo [1/4] Building JAR with Maven...
+    mvn clean package
+    if errorlevel 1 (
+        echo ERROR: Maven build failed!
+        pause
+        exit /b 1
+    )
 )
 echo + JAR build successful
 
@@ -96,7 +100,7 @@ goto :skip_install
 
 :install
 echo.
-echo Enter installation directory (or press Enter for default - %USERPROFILE%\SwingNote):
+echo Enter installation directory (or press Enter for default - %APPDATA%\SwingNote):
 echo NOTE: Do not use quotes around the path
 set /p "CUSTOM_DIR=Install to - "
 
@@ -106,7 +110,7 @@ if not "%CUSTOM_DIR%"=="" (
 )
 
 if "%CUSTOM_DIR%"=="" (
-    set "INSTALL_DIR=%USERPROFILE%\SwingNote"
+    set "INSTALL_DIR=%APPDATA%\SwingNote"
 ) else (
     set "INSTALL_DIR=%CUSTOM_DIR%"
 )
