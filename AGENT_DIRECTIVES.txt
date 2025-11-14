@@ -10,8 +10,19 @@
 
 
 // ENVIRONMENT DETAILS
-> When operating on the machine whose name begins with `l`, Maven commands must be issued with `mvnd`.  Otherwise, Maven commands sholud be accessible via `mvn`.
-> When presenting a change for human review, always ask to issue `{mavnen} clean compile`
+> Begin each session by determining the terminal system you are working with.  If you're on Windows / PowerShell, do not try to issue Linux commands.  Likewise, if you are on Linux, do not try to issue Windows / PowerShell commands.
+> ** DO NOT HALLUCINATE THE TERMINAL SYSTEM >> ALWAYS PERFORM AN INITIALIZATION TEST TO DETERMINE IT FACTUALLY. **
+> ** ALWAYS RUN THIS CHECK DURING THE SAME PROMPT THAT YOU ENCOUNTER THIS DIRECTIVE. DO NOT ASK TO FOLLOW UP OR DO IT LATER. **
+> When summarizing what you have learned, provide the name of the terminal system you will interface with.
+
+
+> When operating on the machine whose name begins with `l`, Maven commands must be issued with `mvnd`.  Otherwise, Maven commands sholud be accessible via `mvn`.  **YOU** must run the commands to determine the machine name.  You may be running on Linux or Windows, so you will need to determine the appropriate command for the environment.
+> ** DO NOT HALLUCINATE THE MACHINE NAME >> ALWAYS ISSUE A COMMAND TO THE OS TO DETERMINE IT FACTUALLY. **
+> ** ALWAYS RUN THIS CHECK DURING THE SAME PROMPT THAT YOU ENCOUNTER THIS DIRECTIVE. DO NOT ASK TO FOLLOW UP OR DO IT LATER. **
+
+> When presenting a change for human review, always ask to issue `{maven} clean compile`.
+> ** THE MAVEN COMMAND MUST ALWAYS BE `{maven} clean compile`.  DO NOT TRY TO QUIET OR HIDE OUTPUT, TAIL OUTPUT, OR ANY OTHER TRICK TO SLIM THE OUTPUT.  I WANT TO SEE THE COMPLETE COMPILE RESULTS! **
+> When summarizing what you have learned, provide the exact Maven command that will be used during the rest of the session.
 
 
 // AI STATEMENTS

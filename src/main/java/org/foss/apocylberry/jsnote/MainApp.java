@@ -157,7 +157,7 @@ public class MainApp extends JFrame {
     private void toggleSpecialCharacters(boolean show) {
         showSpecialCharacters = show;
         prefs.putBoolean("showSpecialChars", show);
-                editor.repaint();
+        editor.setShowSpecialCharacters(show);
     }
 
     private void showFindDialog() {
@@ -181,6 +181,10 @@ public class MainApp extends JFrame {
         // Create editor
         editor = new EditorPane();
         editor.setMaxLineLength(prefs.getInt("maxLineLength", 1024));
+        showSpecialCharacters = prefs.getBoolean("showSpecialChars", false);
+        if (showSpecialCharacters) {
+            editor.setShowSpecialCharacters(true);
+        }
         
 
         // Add Replace (Ctrl+H) binding - use WHEN_FOCUSED to override default delete-previous binding
@@ -324,11 +328,6 @@ public class MainApp extends JFrame {
         // No need for duplicate key binding here since we handle it in initComponents()
         editMenu.addSeparator();
         addMenuItem(editMenu, "Select All", KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_DOWN_MASK), e -> editor.selectAll());
-        editMenu.addSeparator();
-        JCheckBoxMenuItem showSpecialCharsItem = new JCheckBoxMenuItem("Show special characters");
-        showSpecialCharsItem.setState(showSpecialCharacters);
-        showSpecialCharsItem.addActionListener(e -> toggleSpecialCharacters(showSpecialCharsItem.isSelected()));
-        editMenu.add(showSpecialCharsItem);
         
         // Format menu
         // Create toolbar
@@ -342,6 +341,11 @@ public class MainApp extends JFrame {
         lineNumbersItem.setState(prefs.getBoolean("showLineNumbers", false));
         lineNumbersItem.addActionListener(e -> toggleLineNumbers(lineNumbersItem.isSelected()));
         viewMenu.add(lineNumbersItem);
+        viewMenu.addSeparator();
+        JCheckBoxMenuItem showSpecialCharsItem = new JCheckBoxMenuItem("Show Special Characters");
+        showSpecialCharsItem.setState(showSpecialCharacters);
+        showSpecialCharsItem.addActionListener(e -> toggleSpecialCharacters(showSpecialCharsItem.isSelected()));
+        viewMenu.add(showSpecialCharsItem);
         
         // Format menu
         JMenu formatMenu = new JMenu("Format");

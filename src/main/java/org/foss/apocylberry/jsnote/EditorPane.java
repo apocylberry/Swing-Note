@@ -353,6 +353,7 @@ public class EditorPane extends JTextPane {
     private ProxyUndoListener proxyUndoListener;
 
     private boolean overtypeMode = false;
+    private boolean showSpecialCharacters = false;
 
     /**
      * Proxy listener that can toggle between sending edits to the UndoManager
@@ -531,6 +532,46 @@ public class EditorPane extends JTextPane {
 
     public boolean getWrapStyleWord() {
         return wrapStyleWord;
+    }
+
+    public void setShowSpecialCharacters(boolean show) {
+        if (this.showSpecialCharacters != show) {
+            this.showSpecialCharacters = show;
+            // Save current state
+            String content = getText();
+            int caretPos = getCaretPosition();
+            
+            if (show) {
+                // Switch to SpecialCharactersEditorKit
+                SpecialCharactersEditorKit kit = new SpecialCharactersEditorKit();
+                kit.setShowSpecialCharacters(true);
+                setEditorKit(kit);
+            } else {
+                // Switch back to normal editor kit
+                if (lineWrap) {
+                    setEditorKit(new WrapEditorKit());
+                } else {
+                    setEditorKit(new NoWrapEditorKit());
+                }
+            }
+            
+            // Restore content and caret position
+            setText(content);
+            try {
+                setCaretPosition(Math.min(caretPos, content.length()));
+            } catch (IllegalArgumentException e) {
+                setCaretPosition(0);
+            }
+            
+            // Re-attach the undo manager to the new document
+            attachUndoListener();
+            revalidate();
+            repaint();
+        }
+    }
+
+    public boolean isShowSpecialCharacters() {
+        return showSpecialCharacters;
     }
 
     public String getCursorPosition() {
