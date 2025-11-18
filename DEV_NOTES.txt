@@ -21,7 +21,10 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 // New document title bar should be the first line of text (up to 16 characters, otherwise 13 characters + `...`)
 
-// Connect to dev tools to read std out?
+
+
+
+
 
 // tab / shift tab on selected block performs indentation
 
@@ -64,3 +67,19 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
  * Replace button should instantly replace the next instance.  Replace All does not work.
  
  * When tabbing between fields in the Replace dialog, the new field should enter focus with the text selected
+
+
+
+
+
+// TOUGH TASKS
+
+
+// Connect to dev tools to read std out?
+// Not immediately feasible, but can be done with an IDE-specific extension.  Copilot notes:
+// IMPLEMENTATION: Build a companion VS Code extension + SwingNote console listener.
+// Extension (TypeScript, ~250 lines): Listens to Debug Adapter Protocol events, captures debug console output, forwards via TCP socket to SwingNote.
+// SwingNote (Java, ~350 lines): Adds console panel, listens on socket, displays incoming output in real-time.
+// Fully decoupled: no changes needed to user's debug setup or monitored application. Extension auto-connects when debugging starts.
+// Build sequence: (1) Architecture diagram, (2) VS Code extension with DAP listener, (3) SwingNote socket listener + console panel UI.
+// Socket protocol: line-based messages formatted as "TYPE:MESSAGE" where TYPE is stdout or stderr.
