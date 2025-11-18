@@ -21,11 +21,11 @@ if not exist "pom.xml" (
 )
 
 REM Step 1: Clean build
-echo [1/4] Building JAR with Maven Daemon...
+echo [1/4] Building JAR with Maven...
 mvn clean package
 if errorlevel 1 (
-    echo [1/4] Building JAR with Maven...
-    mvn clean package
+    echo [1/4] Building JAR with Maven Daemon...
+    mvnd clean package
     if errorlevel 1 (
         echo ERROR: Maven build failed!
         pause

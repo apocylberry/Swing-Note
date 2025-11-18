@@ -37,6 +37,12 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 
 
 // BUG LIST
+ * "Show special characters" work was partially completed.  Still broken:
+    * Special characters should be middle aligned in their field
+    * New line character does not display correctly for end of file
+    * Something else, but I forget what.
+    * Toggling special characters should not reset viewport to position 1,1
+
  * Opening a large file (such as a 32MB log file) locks up on load for a very long time.  Notepad, on the other hand, opens the same file almost immediately.
 
  * Replace All breaks the undo stack.  Before a replace all, undo is unlimited.  After a replace all, undo is reset.  Future edits after the replace all should all be avaialble to back out, but nothing prior to the replace all can be backed out.
@@ -44,8 +50,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
  * The Windows scaling bug when a 4K monitor is present and scaling is set >100%!  Ugh!  The UI is almost unreadable in that scenario.
 
  * If accidentally hovering the Line Number gutter when selecting text, all text from the end of the selected range to line 1 character 1 is selected.  Very disruptive if attempting to select multiple lines of text embedded deep in a large document.
-
- * "Show special characters" does not show the new line, tab, and space characters
 
  * Despite repeated callouts to correct, searching past the end of the document using F3 / Shift + F3 still does not notify in the task bar!
 
