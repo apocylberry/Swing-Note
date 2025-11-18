@@ -46,8 +46,6 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
     * Something else, but I forget what.
     * Toggling special characters should not reset viewport to position 1,1
 
- * Opening a large file (such as a 32MB log file) locks up on load for a very long time.  Notepad, on the other hand, opens the same file almost immediately.
-
  * Replace All breaks the undo stack.  Before a replace all, undo is unlimited.  After a replace all, undo is reset.  Future edits after the replace all should all be avaialble to back out, but nothing prior to the replace all can be backed out.
 
  * The Windows scaling bug when a 4K monitor is present and scaling is set >100%!  Ugh!  The UI is almost unreadable in that scenario.
@@ -83,3 +81,11 @@ Tab key templates should be saved by a user-provided name (such as JCL or Cobol)
 // Fully decoupled: no changes needed to user's debug setup or monitored application. Extension auto-connects when debugging starts.
 // Build sequence: (1) Architecture diagram, (2) VS Code extension with DAP listener, (3) SwingNote socket listener + console panel UI.
 // Socket protocol: line-based messages formatted as "TYPE:MESSAGE" where TYPE is stdout or stderr.
+
+
+// Opening a large file (such as a 32MB log file) takes a very long time.  Notepad opens the same file almost immediately.
+// - INVESTIGATION COMPLETE: Implemented optimizations (background thread loading, disabled undo tracking during load, disabled document listener during load, single batch document insertion). These improved responsiveness but load time remains slow due to LRECL character-position wrapping in custom View creation during insertString().
+// - ROOT CAUSE: Custom EditorKit (NoWrapEditorKit) creates LRECLGlyphView objects for every content element, performing expensive wrapping calculations. Requires architectural redesign (lazy/on-demand View creation) to significantly improve load times.
+// - DECISION: LRECL feature took several hours to stabilize; not pursuing further load time optimization to avoid breaking LRECL. Current implementation acceptable for user.
+
+

@@ -604,6 +604,30 @@ public class EditorPane extends JTextPane {
         System.err.println("DEBUG: UndoManager canUndo after clear: " + undoManager.canUndo());
     }
 
+
+    /**
+     * Temporarily disable undo tracking. Call enableUndoTracking() to re-enable.
+     * Used during large file loads to prevent excessive undo entry creation.
+     */
+    public void disableUndoTracking() {
+        StyledDocument doc = (StyledDocument) getDocument();
+        if (undoManager != null && doc != null) {
+            doc.removeUndoableEditListener(undoManager);
+            System.err.println("DEBUG: UndoManager disabled for document " + System.identityHashCode(doc));
+        }
+    }
+
+    /**
+     * Re-enable undo tracking after it was disabled by disableUndoTracking().
+     */
+    public void enableUndoTracking() {
+        StyledDocument doc = (StyledDocument) getDocument();
+        if (undoManager != null && doc != null) {
+            doc.addUndoableEditListener(undoManager);
+            System.err.println("DEBUG: UndoManager re-enabled for document " + System.identityHashCode(doc));
+        }
+    }
+
     /**
      * Start capturing edits into a CompoundEdit instead of the UndoManager.
      * Used by Replace All to group multiple edits into a single undo action.

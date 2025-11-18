@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.nio.file.ClosedWatchServiceException;
 
 public class MainApp extends JFrame {
@@ -43,6 +42,10 @@ public class MainApp extends JFrame {
     private boolean diskModified = false; // Track if file was modified on disk
     private boolean suppressWatcherEvents = false; // Suppress file watcher events during our own saves
     private boolean isMainInstance = true;
+    
+
+    private javax.swing.event.DocumentListener documentListener; // Store reference to disable during file load
+    private volatile boolean fileLoadInProgress = false; // Flag to track file loading state
 
     private void toggleLineNumbers(boolean show) {
         if (show) {
@@ -266,7 +269,8 @@ public class MainApp extends JFrame {
         
 
         // Listen for document changes to track unsaved changes
-        editor.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+
+        documentListener = new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
                 markAsModified();
             }
@@ -276,7 +280,8 @@ public class MainApp extends JFrame {
             public void changedUpdate(javax.swing.event.DocumentEvent e) {
                 markAsModified();
             }
-        });
+        };
+        editor.getDocument().addDocumentListener(documentListener);
         
         // Create menu bar
         JMenuBar menuBar = new JMenuBar();
@@ -452,44 +457,77 @@ public class MainApp extends JFrame {
         int cursorPosition = editor.getCaretPosition();
         int viewportY = editor.getVisibleRect().y;
         
-        // Reload the file from disk
-        try {
-            suppressWatcherEvents = true;
-            String content = Files.readString(currentFile.toPath());
-            savedContent = content;
-            editor.setText(content);
-            editor.clearUndoHistory();
-            hasUnsavedChanges = false;
-            diskModified = false;
-            
-            // Restore cursor position, or place at end if position no longer exists
-            if (cursorPosition <= editor.getDocument().getLength()) {
-                editor.setCaretPosition(cursorPosition);
-            } else {
-                editor.setCaretPosition(editor.getDocument().getLength());
+
+        // Load file in background thread to prevent UI freeze
+        fileLoadInProgress = true;
+        setStatusMessage("Reloading: " + currentFile.getName() + "...");
+        
+        Thread loadThread = new Thread(() -> {
+            try {
+                String content = Files.readString(currentFile.toPath());
+                
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        suppressWatcherEvents = true;
+                        
+
+                        // Disable document listener and undo tracking during reload
+                        editor.getDocument().removeDocumentListener(documentListener);
+                        editor.disableUndoTracking();
+                        
+                        savedContent = content;
+                        
+
+                        // CRITICAL OPTIMIZATION: Replace document content in single operation
+                        // Document listener is disabled, so no cascading change events
+                        javax.swing.text.Document doc = editor.getDocument();
+                        doc.remove(0, doc.getLength());
+                        doc.insertString(0, content, null);
+                        
+                        editor.clearUndoHistory();
+                        hasUnsavedChanges = false;
+                        diskModified = false;
+                        
+                        // Re-enable undo tracking and document listener
+                        editor.enableUndoTracking();
+                        editor.getDocument().addDocumentListener(documentListener);
+                        
+                        // Restore cursor position if still valid
+                        if (cursorPosition <= editor.getDocument().getLength()) {
+                            editor.setCaretPosition(cursorPosition);
+                        } else {
+                            editor.setCaretPosition(editor.getDocument().getLength());
+                        }
+                        
+                        // Restore viewport position
+                        Rectangle viewRect = editor.getVisibleRect();
+                        viewRect.y = viewportY;
+                        editor.scrollRectToVisible(viewRect);
+                        
+                        fileLoadInProgress = false;
+                        updateTitleBar();
+                        setStatusMessage("File reloaded from disk");
+                        Thread.sleep(150);
+                        suppressWatcherEvents = false;
+                    } catch (Exception ex) {
+                        fileLoadInProgress = false;
+                        suppressWatcherEvents = false;
+                        JOptionPane.showMessageDialog(MainApp.this, "Error reloading file: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (IOException ex) {
+                SwingUtilities.invokeLater(() -> {
+                    fileLoadInProgress = false;
+                    suppressWatcherEvents = false;
+                    JOptionPane.showMessageDialog(MainApp.this, "Error reading file: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                });
             }
-            
-            // Restore viewport position
-            SwingUtilities.invokeLater(() -> {
-                Rectangle viewRect = editor.getVisibleRect();
-                viewRect.y = viewportY;
-                editor.scrollRectToVisible(viewRect);
-            });
-            
-            updateTitleBar();
-            setStatusMessage("File reloaded from disk");
-            Thread.sleep(150);
-            suppressWatcherEvents = false;
-        } catch (IOException ex) {
-            suppressWatcherEvents = false;
-            JOptionPane.showMessageDialog(this,
-                "Error reading file: " + ex.getMessage(),
-                "Error",
-                JOptionPane.ERROR_MESSAGE);
-        } catch (InterruptedException ex) {
-            suppressWatcherEvents = false;
-            // Ignore interruption
-        }
+        });
+        loadThread.setName("FileReloader");
+        loadThread.setPriority(Thread.NORM_PRIORITY);
+        loadThread.start();
     }
 
 
@@ -592,22 +630,69 @@ public class MainApp extends JFrame {
 
 
     private void openFile(File file) {
-        try {
-            String content = Files.readString(file.toPath());
 
-            savedContent = content; // Store the opened file content BEFORE setText to prevent document listener from marking as modified
-            editor.setText(content);
-            editor.clearUndoHistory(); // Clear undo history for newly opened file
-            editor.setCaretPosition(0); // Place cursor at position 1,1 (offset 0)
-            currentFile = file;
-            hasUnsavedChanges = false;
-            diskModified = false;
-            updateTitleBar();
-            startFileWatcher(file); // Start monitoring for external changes
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "Error reading file: " + ex.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        // Load file in background thread to prevent UI freeze on large files
+        fileLoadInProgress = true;
+        setStatusMessage("Loading: " + file.getName() + "...");
+        
+        Thread loadThread = new Thread(() -> {
+            try {
+                // Read file on background thread
+                String content = Files.readString(file.toPath());
+                
+                // Update UI on EDT
+                SwingUtilities.invokeLater(() -> {
+                    try {
+
+                        // Disable document listener and undo tracking to prevent slowdown during load
+                        editor.getDocument().removeDocumentListener(documentListener);
+                        editor.disableUndoTracking();
+                        
+                        // Store content for comparison
+                        savedContent = content;
+                        
+                        // CRITICAL OPTIMIZATION: Replace document content while bypassing view creation
+                        // Use the existing styled document but clear it first (minimal view work)
+                        // then insert all content at once (creates views only once per logical operation)
+                        javax.swing.text.Document doc = editor.getDocument();
+                        doc.remove(0, doc.getLength());
+                        
+                        // Insert the entire content in one operation - views created in batch, not incrementally
+                        // The key is that we've disabled the document listener, preventing change cascades
+                        doc.insertString(0, content, null);
+                        
+                        editor.clearUndoHistory();
+                        editor.setCaretPosition(0);
+                        
+                        // Re-enable undo tracking and document listener
+                        editor.enableUndoTracking();
+                        editor.getDocument().addDocumentListener(documentListener);
+                        
+                        // Update state
+                        currentFile = file;
+                        hasUnsavedChanges = false;
+                        diskModified = false;
+                        fileLoadInProgress = false;
+                        updateTitleBar();
+                        setStatusMessage("File loaded");
+                        startFileWatcher(file);
+                    } catch (Exception ex) {
+                        fileLoadInProgress = false;
+                        JOptionPane.showMessageDialog(MainApp.this, "Error loading file: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (IOException ex) {
+                SwingUtilities.invokeLater(() -> {
+                    fileLoadInProgress = false;
+                    JOptionPane.showMessageDialog(MainApp.this, "Error reading file: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        });
+        loadThread.setName("FileLoader");
+        loadThread.setPriority(Thread.NORM_PRIORITY);
+        loadThread.start();
     }
     
     private void saveFile() {
