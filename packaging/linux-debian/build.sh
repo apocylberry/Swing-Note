@@ -16,46 +16,10 @@
 #   > `sudo rm /usr/local/bin/SwingNote`
 
 
-
-set -e  # Stop on first error
-
-echo "=========================================="
-echo " SwingNote Linux DEB Build Script"
-echo "=========================================="
-echo
-
-# Navigate to project root (two levels up from packaging/linux-debian)
-cd "$(dirname "$0")/../.."
-
-# Check pom.xml exists
-if [[ ! -f "pom.xml" ]]; then
-    echo "ERROR: pom.xml not found in project root!"
-    echo "Make sure this script is inside packaging/linux-debian/"
-    exit 1
-fi
-
-# Extract version
-echo "[1/5] Detecting version from pom.xml..."
-VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-if [[ -z "$VERSION" ]]; then
-    echo "ERROR: Could not read version from pom.xml"
-    exit 1
-fi
-echo "+ Version: $VERSION"
-
-# SESSION VARIABLES
-MAIN_JAR="jsnote-$VERSION.jar"
-DEB_FILE="dist/swingnote_${VERSION}_amd64.deb"
-ICON_PATH="src/main/resources/SwingNote-256.png"
-echo "+ MainJar: $MAIN_JAR"
-echo "+ Package: $DEB_FILE"
-echo "+ IconPth: $ICON_PATH"
-echo
-
-read -p "Build the DEB package now? (y/n) " BUILD_CHOICE
-if [[ "$BUILD_CHOICE" == "y" || "$BUILD_CHOICE" == "Y" ]]; then
-    # =======================================================
+# METHOD DECLARATIONS:
+doBuild() {
     # Step 1 — Build the JAR
+    # =======================================================
     echo "[2/5] Building JAR with mvn..."
     if ! mvn clean package; then
         echo "Maven failed — trying mvnd..."
@@ -68,8 +32,8 @@ if [[ "$BUILD_CHOICE" == "y" || "$BUILD_CHOICE" == "Y" ]]; then
     echo
 
 
-    # =======================================================
     # Step 2 — Clean previous build
+    # =======================================================
     echo "[3/5] Cleaning old dist folder..."
     if [[ -d "dist" ]]; then
         rm -rf dist
@@ -80,8 +44,8 @@ if [[ "$BUILD_CHOICE" == "y" || "$BUILD_CHOICE" == "Y" ]]; then
     echo
 
 
-    # =======================================================
     # Step 3 — Verify icon exists
+    # =======================================================
     echo "[4/5] Checking icon..."
     if [[ ! -f "$ICON_PATH" ]]; then
         echo "ERROR: Icon not found at $ICON_PATH"
@@ -91,8 +55,8 @@ if [[ "$BUILD_CHOICE" == "y" || "$BUILD_CHOICE" == "Y" ]]; then
     echo
 
 
-    # =======================================================
     # Step 4 — Create DEB package
+    # =======================================================
     echo "[5/5] Creating DEB package with jpackage..."
     if [[ ! -f "target/$MAIN_JAR" ]]; then
         echo "ERROR: Expected JAR missing: target/$MAIN_JAR"
@@ -127,6 +91,53 @@ if [[ "$BUILD_CHOICE" == "y" || "$BUILD_CHOICE" == "Y" ]]; then
     echo "DEB Package Location:"
     echo "  $DEB_FILE"
     echo
+}
+
+
+
+set -e  # Stop on first error
+
+echo "=========================================="
+echo " SwingNote Linux DEB Build Script"
+echo "=========================================="
+echo
+
+# Navigate to project root (two levels up from packaging/linux-debian)
+cd "$(dirname "$0")/../.."
+
+# Check pom.xml exists
+if [[ ! -f "pom.xml" ]]; then
+    echo "ERROR: pom.xml not found in project root!"
+    echo "Make sure this script is inside packaging/linux-debian/"
+    exit 1
+fi
+
+# Extract version
+echo "[1/5] Detecting version from pom.xml..."
+VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+if [[ -z "$VERSION" ]]; then
+    echo "ERROR: Could not read version from pom.xml"
+    exit 1
+fi
+echo
+echo
+echo "BUILD DETAILS"
+echo "+ Version: $VERSION"
+
+# SESSION VARIABLES
+MAIN_JAR="jsnote-$VERSION.jar"
+DEB_FILE="dist/swingnote_${VERSION}_amd64.deb"
+ICON_PATH="src/main/resources/SwingNote-256.png"
+BUILD_CHOICE=""
+INSTALL_CHOICE=""
+echo "+ MainJar: $MAIN_JAR"
+echo "+ Package: $DEB_FILE"
+echo "+ IconPth: $ICON_PATH"
+echo
+
+read -p "Build the DEB package now? (y/n) " BUILD_CHOICE
+if [[ "$BUILD_CHOICE" == "y" || "$BUILD_CHOICE" == "Y" ]]; then
+    doBuild
 else
     echo "Skipping package."
 fi
@@ -138,8 +149,12 @@ read -p "Install the DEB package now? (y/n) " INSTALL_CHOICE
 
 if [[ "$INSTALL_CHOICE" == "y" || "$INSTALL_CHOICE" == "Y" ]]; then
     if [[ ! -f "$DEB_FILE" ]]; then
-        echo "ERROR: DEB package not found!"
-        exit 1
+        read -p "ERROR: DEB package not found!  Build it? (y/n) " BUILD_CHOICE
+        if [[ "$BUILD_CHOICE" == "y" || "$BUILD_CHOICE" == "Y" ]]; then
+            doBuild
+        else
+            exit 1
+        fi
     fi
 
     echo
@@ -149,13 +164,6 @@ if [[ "$INSTALL_CHOICE" == "y" || "$INSTALL_CHOICE" == "Y" ]]; then
 
     echo
     echo "Installation complete."
-
-    # Ask to test
-    read -p "Launch SwingNote now? (y/n) " RUN_CHOICE
-    if [[ "$RUN_CHOICE" == "y" || "$RUN_CHOICE" == "Y" ]]; then
-        echo "Running SwingNote..."
-        SwingNote &
-    fi
 else
     echo "Skipping installation."
     echo "You can install manually using:"
